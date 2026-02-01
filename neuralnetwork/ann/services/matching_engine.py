@@ -7,7 +7,8 @@ Combines semantic similarity, skill overlap, experience, and education.
 Phase 4 implementation per PROJECT_PLAN.md.
 
 Per PRD.md Section 8.3 (Scoring Formula):
-MVP: Match % = (0.30*Semantic) + (0.35*Skills) + (0.20*Exp) + (0.10*Edu) + (0.05*Profile)
+MVP: Match % = (0.25*Semantic) + (0.35*Skills) + (0.20*Exp) + (0.10*Edu) + (0.10*Profile)
+     Skills  = (0.70*Technical) + (0.20*Domain) + (0.10*Soft)
 V1:  Match % = ANN([semantic, skills, experience, education, profile])
 """
 
@@ -23,7 +24,7 @@ class MatchingEngine:
 
     Uses multiple factors:
     - Semantic similarity (embeddings)
-    - Skill overlap (fuzzy matching)
+    - Skill overlap (Technical 70%, Domain 20%, Soft 10%)
     - Experience match
     - Education relevance
     - Profile completeness
@@ -34,11 +35,16 @@ class MatchingEngine:
     def __init__(self):
         from django.conf import settings
         self.weights = getattr(settings, 'MATCH_WEIGHTS', {
-            'semantic': 0.30,
+            'semantic': 0.25,
             'skills': 0.35,
             'experience': 0.20,
             'education': 0.10,
-            'profile': 0.05,
+            'profile': 0.10,
+        })
+        self.skills_weights = getattr(settings, 'SKILLS_WEIGHTS', {
+            'technical': 0.70,
+            'domain': 0.20,
+            'soft': 0.10,
         })
 
     def calculate_match(self, candidate, job) -> Dict:

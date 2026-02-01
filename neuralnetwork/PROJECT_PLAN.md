@@ -757,11 +757,11 @@ class MatchingEngine:
 
         # MVP weights (fixed) - will be learned by ANN in Phase 5
         self.weights = {
-            'semantic': 0.30,      # Overall text similarity
-            'skills': 0.35,        # Skill overlap
+            'semantic': 0.25,      # Overall text similarity
+            'skills': 0.35,        # Skill overlap (Technical 70%, Domain 20%, Soft 10%)
             'experience': 0.20,    # Experience match
             'education': 0.10,     # Education relevance
-            'profile': 0.05       # Profile completeness
+            'profile': 0.10        # Profile completeness
         }
 
     def calculate_match(self, candidate: CandidateProfile, job: Job) -> Dict:
@@ -1049,7 +1049,9 @@ Train a neural network to learn optimal matching weights from data.
 ### Why ANN?
 ```
 MVP (Fixed Weights):
-Match = 0.30×Semantic + 0.35×Skills + 0.20×Experience + 0.10×Education + 0.05×Profile
+Match = 0.25×Semantic + 0.35×Skills + 0.20×Experience + 0.10×Education + 0.10×Profile
+
+Skills Score = 0.70×Technical + 0.20×Domain + 0.10×Soft Skills
 
 ANN (Learned Weights):
 Match = ANN([semantic, skills, experience, education, profile])
@@ -1316,8 +1318,9 @@ class MatchPredictorService:
             return self._weighted_average(feature_array)
 
     def _weighted_average(self, features: np.ndarray) -> float:
-        """Fallback calculation using fixed weights."""
-        weights = np.array([0.25, 0.40, 0.20, 0.08, 0.07])
+        """Fallback calculation using fixed weights per PRD.md."""
+        # semantic=0.25, skills=0.35, experience=0.20, education=0.10, profile=0.10
+        weights = np.array([0.25, 0.35, 0.20, 0.10, 0.10])
         return float(np.dot(features, weights) * 100)
 ```
 

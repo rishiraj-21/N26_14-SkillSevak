@@ -807,14 +807,26 @@ Example 3: Healthcare Role
 
 **MVP (Fixed Weights):**
 ```
-Match % = (0.25 × Semantic) + (0.35 × Skills) + (0.20 × Experience) 
+Match % = (0.25 × Semantic) + (0.35 × Skills) + (0.20 × Experience)
         + (0.10 × Education) + (0.10 × Profile)
 ```
+
+**Skills Score Breakdown:**
+```
+Skills Score = (0.70 × Technical Skills)
+             + (0.20 × Domain Skills)
+             + (0.10 × Soft Skills)
+```
+
+Where:
+- **Technical Skills**: Programming languages, frameworks, tools (Python, React, Docker)
+- **Domain Skills**: Industry-specific knowledge (Machine Learning, Financial Analysis, Healthcare)
+- **Soft Skills**: Communication, leadership, teamwork, problem-solving
 
 **V1 (ANN Learned Weights):**
 ```
 Match % = ANN([semantic, skills, experience, education, profile])
-# ANN learns optimal weights from training data
+# ANN learns optimal weights from training data automatically
 ```
 
 ---

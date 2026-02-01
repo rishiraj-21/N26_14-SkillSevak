@@ -93,8 +93,9 @@ else:
             logger.warning("PyTorch not available. Using weighted average fallback.")
 
         def predict(self, features) -> float:
-            """Fallback to weighted average."""
+            """Fallback to weighted average per PRD.md scoring formula."""
             import numpy as np
-            weights = np.array([0.30, 0.35, 0.20, 0.10, 0.05])
+            # Weights: semantic=0.25, skills=0.35, experience=0.20, education=0.10, profile=0.10
+            weights = np.array([0.25, 0.35, 0.20, 0.10, 0.10])
             features = np.array(features)
             return float(np.dot(features, weights) * 100)

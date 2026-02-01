@@ -187,11 +187,18 @@ ANN_MODEL_PATH = os.path.join(BASE_DIR, 'ann', 'ml', 'weights', 'match_predictor
 # Match score weights (MVP - fixed weights per PRD.md)
 # These will be learned by ANN in Phase 5
 MATCH_WEIGHTS = {
-    'semantic': 0.30,
+    'semantic': 0.25,
     'skills': 0.35,
     'experience': 0.20,
     'education': 0.10,
-    'profile': 0.05,
+    'profile': 0.10,
+}
+
+# Skills score breakdown weights
+SKILLS_WEIGHTS = {
+    'technical': 0.70,   # Programming, frameworks, tools
+    'domain': 0.20,      # Industry-specific knowledge
+    'soft': 0.10,        # Communication, leadership, teamwork
 }
 
 # =============================================================================

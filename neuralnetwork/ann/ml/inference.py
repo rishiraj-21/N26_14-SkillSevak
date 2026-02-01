@@ -97,7 +97,8 @@ class MatchPredictorService:
 
     def _weighted_average(self, features: np.ndarray) -> float:
         """Fallback calculation using fixed weights per PRD.md."""
-        weights = np.array([0.30, 0.35, 0.20, 0.10, 0.05])
+        # Weights: semantic=0.25, skills=0.35, experience=0.20, education=0.10, profile=0.10
+        weights = np.array([0.25, 0.35, 0.20, 0.10, 0.10])
         return float(np.dot(features, weights) * 100)
 
     @property
