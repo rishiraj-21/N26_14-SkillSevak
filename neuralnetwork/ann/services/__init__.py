@@ -13,13 +13,14 @@ not just tech. No hardcoded skill dictionaries.
 """
 
 from .resume_parser import ResumeParser
-from .skill_extractor import DynamicSkillExtractor
+from .skill_extractor import DynamicSkillExtractor, SkillCategory
 from .embedding_service import EmbeddingService
 from .matching_engine import MatchingEngine
 
 __all__ = [
     'ResumeParser',
     'DynamicSkillExtractor',
+    'SkillCategory',
     'EmbeddingService',
     'MatchingEngine',
 ]

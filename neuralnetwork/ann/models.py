@@ -248,6 +248,20 @@ class CandidateSkill(models.Model):
         help_text="NLP extraction confidence (0.0-1.0)"
     )
 
+    # Skill category for weighted scoring per PRD.md Section 8.3
+    # Skills Score = (0.70 × Technical) + (0.20 × Domain) + (0.10 × Soft)
+    CATEGORY_CHOICES = [
+        ('technical', 'Technical'),   # 70% weight - Programming, frameworks, tools
+        ('domain', 'Domain'),         # 20% weight - Industry-specific knowledge
+        ('soft', 'Soft'),             # 10% weight - Communication, leadership
+    ]
+    category = models.CharField(
+        max_length=20,
+        choices=CATEGORY_CHOICES,
+        default='domain',
+        help_text="Skill category for weighted scoring"
+    )
+
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -259,6 +273,7 @@ class CandidateSkill(models.Model):
         indexes = [
             models.Index(fields=['normalized_text']),
             models.Index(fields=['candidate', 'proficiency_level']),
+            models.Index(fields=['category']),
         ]
 
     def __str__(self):
@@ -311,6 +326,19 @@ class JobSkill(models.Model):
         help_text="Skill importance for weighted scoring"
     )
 
+    # Skill category for weighted scoring per PRD.md Section 8.3
+    CATEGORY_CHOICES = [
+        ('technical', 'Technical'),
+        ('domain', 'Domain'),
+        ('soft', 'Soft'),
+    ]
+    category = models.CharField(
+        max_length=20,
+        choices=CATEGORY_CHOICES,
+        default='domain',
+        help_text="Skill category for weighted scoring"
+    )
+
     # Context from job description
     context = models.TextField(
         blank=True,
@@ -327,6 +355,7 @@ class JobSkill(models.Model):
         indexes = [
             models.Index(fields=['normalized_text']),
             models.Index(fields=['job', 'importance']),
+            models.Index(fields=['category']),
         ]
 
     def __str__(self):

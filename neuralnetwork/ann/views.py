@@ -15,7 +15,7 @@ import json
 import os
 import logging
 
-from .models import Job, CandidateProfile, Application, CompanyProfile, ParsedResume
+from .models import Job, CandidateProfile, Application, CompanyProfile, ParsedResume, CandidateSkill, JobSkill
 
 logger = logging.getLogger(__name__)
 
@@ -504,7 +504,11 @@ def company_edit_job(request, job_id):
         job.benefits = request.POST.get('benefits', job.benefits) or ''
         job.skills_required = request.POST.get('skills_required', job.skills_required) or ''
         job.save()
-        
+
+        # Phase 3: Re-extract skills after job update
+        skills_count = extract_job_skills(job)
+        logger.info(f"Updated job '{job.title}' with {skills_count} extracted skills")
+
         messages.success(request, 'Job updated successfully.')
         return redirect('jobs')
     
@@ -522,7 +526,7 @@ def company_create_job(request):
 
     if request.method == 'POST':
         cp = request.user.companyprofile
-        Job.objects.create(
+        job = Job.objects.create(
             company_profile=cp,
             company=cp.company_name,
             title=request.POST.get('title'),
@@ -536,6 +540,11 @@ def company_create_job(request):
             benefits=request.POST.get('benefits') or '',
             skills_required=request.POST.get('skills_required') or '',
         )
+
+        # Phase 3: Extract skills from job description using NLP
+        skills_count = extract_job_skills(job)
+        logger.info(f"Created job '{job.title}' with {skills_count} extracted skills")
+
         messages.success(request, 'Job posted successfully.')
         return redirect('jobs')  # recruiter jobs page
 
@@ -628,6 +637,138 @@ def job_detail(request, job_id):
     return render(request, 'job_detail.html', context)
 
 
+def extract_candidate_skills(profile, sections: dict, full_text: str) -> int:
+    """
+    Extract skills from resume and store in database.
+
+    Phase 3 implementation per PROJECT_PLAN.md.
+
+    Args:
+        profile: CandidateProfile instance
+        sections: Dict of resume sections from parser
+        full_text: Full cleaned resume text
+
+    Returns:
+        Number of skills extracted
+    """
+    from ann.services.skill_extractor import DynamicSkillExtractor
+
+    extractor = DynamicSkillExtractor()
+    all_skills = []
+    seen_normalized = set()
+
+    # Map resume sections to CandidateSkill source choices
+    section_mapping = {
+        'skills': 'skills_section',
+        'experience': 'experience',
+        'projects': 'projects',
+        'education': 'education',
+        'summary': 'summary',
+    }
+
+    # Extract skills from each section
+    for section_name, section_text in sections.items():
+        if not section_text or not section_text.strip():
+            continue
+
+        source = section_mapping.get(section_name, 'full_text')
+        skills = extractor.extract_skills(section_text, section_name)
+
+        for skill in skills:
+            normalized = skill['normalized']
+            if normalized not in seen_normalized:
+                seen_normalized.add(normalized)
+                skill['db_source'] = source
+                all_skills.append(skill)
+
+    # Also extract from full text (catches skills missed in section parsing)
+    full_text_skills = extractor.extract_skills(full_text, 'full_text')
+    for skill in full_text_skills:
+        normalized = skill['normalized']
+        if normalized not in seen_normalized:
+            seen_normalized.add(normalized)
+            skill['db_source'] = 'full_text'
+            all_skills.append(skill)
+
+    # Clear existing skills for this candidate
+    CandidateSkill.objects.filter(candidate=profile).delete()
+
+    # Store extracted skills in database
+    skills_created = 0
+    for skill_data in all_skills:
+        try:
+            # Estimate proficiency from context
+            proficiency = extractor.estimate_proficiency(
+                skill_data['skill'],
+                full_text
+            )
+
+            CandidateSkill.objects.create(
+                candidate=profile,
+                skill_text=skill_data['skill'][:200],  # Truncate if too long
+                normalized_text=skill_data['normalized'][:200],
+                proficiency_level=proficiency,
+                source=skill_data.get('db_source', 'full_text'),
+                context=skill_data.get('context', '')[:500],  # Truncate context
+                confidence_score=skill_data.get('confidence', 0.7),
+                category=skill_data.get('category', 'domain'),
+            )
+            skills_created += 1
+        except Exception as e:
+            logger.warning(f"Failed to save skill '{skill_data.get('skill', '')}': {e}")
+            continue
+
+    logger.info(f"Extracted {skills_created} skills for candidate {profile.user.username}")
+    return skills_created
+
+
+def extract_job_skills(job) -> int:
+    """
+    Extract skills from job description and requirements.
+
+    Phase 3 implementation per PROJECT_PLAN.md.
+
+    Args:
+        job: Job instance
+
+    Returns:
+        Number of skills extracted
+    """
+    from ann.services.skill_extractor import DynamicSkillExtractor
+
+    extractor = DynamicSkillExtractor()
+
+    # Combine description and requirements
+    description = job.description or ''
+    requirements = job.requirements or ''
+
+    # Extract skills with importance levels
+    skills = extractor.extract_job_skills(description, requirements)
+
+    # Clear existing skills for this job
+    JobSkill.objects.filter(job=job).delete()
+
+    # Store extracted skills
+    skills_created = 0
+    for skill_data in skills:
+        try:
+            JobSkill.objects.create(
+                job=job,
+                skill_text=skill_data['skill'][:200],
+                normalized_text=skill_data['normalized'][:200],
+                importance=skill_data.get('importance', 'required'),
+                category=skill_data.get('category', 'domain'),
+                context=skill_data.get('context', '')[:500],
+            )
+            skills_created += 1
+        except Exception as e:
+            logger.warning(f"Failed to save job skill '{skill_data.get('skill', '')}': {e}")
+            continue
+
+    logger.info(f"Extracted {skills_created} skills for job {job.title}")
+    return skills_created
+
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def upload_resume(request):
@@ -708,12 +849,16 @@ def upload_resume(request):
         profile.profile_strength = completeness_score
         profile.save()
 
+        # Phase 3: Extract skills from resume using NLP
+        skills_extracted = extract_candidate_skills(profile, sections, cleaned_text)
+
         # Prepare response
         sections_found = [k for k, v in sections.items() if v.strip()]
 
         logger.info(
             f"Resume parsed for user {request.user.username}: "
-            f"{len(cleaned_text)} chars, {len(sections_found)} sections"
+            f"{len(cleaned_text)} chars, {len(sections_found)} sections, "
+            f"{skills_extracted} skills extracted"
         )
 
         return JsonResponse({
@@ -726,6 +871,7 @@ def upload_resume(request):
                 'sections_found': sections_found,
                 'contact_info': contact_info,
                 'completeness_score': completeness_score,
+                'skills_extracted': skills_extracted,
             }
         })
 
