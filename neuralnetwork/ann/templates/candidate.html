@@ -1,0 +1,1698 @@
+{% load static %}
+{% csrf_token %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Candidate Dashboard - SkillSeva</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'navy-blue': '#1A1F71',
+            'royal-purple': '#3C1E5F',
+            'muted-gold': '#D4AF37',
+            'slate-gray': '#2F2F2F',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .royal-gradient {
+      background: linear-gradient(135deg, #1A1F71 0%, #3C1E5F 100%);
+    }
+    .card-shadow {
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+    .role-card {
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .role-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <!-- Navbar -->
+  <nav class="royal-gradient shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+            </svg>
+          </div>
+          <div>
+            <span class="text-xl font-bold text-white">SkillSevak</span>
+            <p class="text-xs text-white/80">Find Your Dream Job</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+              <span class="text-white font-medium text-sm">
+                {% if user %}{{ user.first_name|default:user.username|slice:":1"|upper }}{% else %}U{% endif %}
+              </span>
+            </div>
+            <span class="text-white">{% if user %}{{ user.first_name|default:user.username }}{% else %}Guest User{% endif %}</span>
+          </div>
+          <a href="{% url 'logout' %}" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors backdrop-blur-sm">Logout</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Dashboard Content -->
+  <div class="min-h-screen p-6 md:p-8">
+    <div class="max-w-7xl mx-auto">
+      
+      <!-- Header -->
+      <div class="mb-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome back, {% if user %}{{ user.first_name|default:user.username }}{% else %}Candidate{% endif %}!</h1>
+            <p class="text-gray-600">Here are your latest AI-powered job recommendations</p>
+          </div>
+          <button onclick="openResumeUpload()" class="px-6 py-3 royal-gradient hover:opacity-90 text-white font-semibold rounded-xl flex items-center gap-2 shadow-md transition-all duration-300 hover:shadow-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            Upload Resume
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-2xl p-6 card-shadow border border-gray-200 hover:shadow-lg transition-all duration-300">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center">
+              <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+              </svg>
+            </div>
+            <div class="text-right">
+              <div class="text-2xl font-bold text-gray-900">{{ applications_count }}</div>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-900 mb-1">Applications Sent</p>
+            <p class="text-xs text-gray-500">This month</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 card-shadow border border-gray-200 hover:shadow-lg transition-all duration-300">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center">
+              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="text-right">
+              <div class="text-2xl font-bold text-gray-900">{% if applications_count > 0 %}75%{% else %}0%{% endif %}</div>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-900 mb-1">Response Rate</p>
+            <p class="text-xs text-gray-500">Average response</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 card-shadow border border-gray-200 hover:shadow-lg transition-all duration-300">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
+              <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="text-right">
+              <div class="text-2xl font-bold text-gray-900">{{ interviews_count }}</div>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-900 mb-1">Interviews</p>
+            <p class="text-xs text-gray-500">Scheduled</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div class="grid lg:grid-cols-4 gap-8">
+        
+        <!-- Jobs Section -->
+        <div class="lg:col-span-3">
+          
+          <!-- Filter Header -->
+          <div class="bg-white rounded-2xl card-shadow border border-gray-200 p-6 mb-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                </svg>
+                AI Recommended Jobs
+              </h2>
+              <div class="flex gap-2">
+                <a href="?filter=best_match" id="filter-best" class="filter-btn px-5 py-2 text-sm font-semibold rounded-xl {% if current_filter == 'best_match' %}royal-gradient text-white{% else %}bg-white border border-gray-300 text-gray-700 hover:bg-gray-50{% endif %} transition-all duration-300">Best Match</a>
+                <a href="?filter=newest_first" id="filter-newest" class="filter-btn px-5 py-2 text-sm font-semibold rounded-xl {% if current_filter == 'newest_first' %}royal-gradient text-white{% else %}bg-white border border-gray-300 text-gray-700 hover:bg-gray-50{% endif %} transition-all duration-300">Newest</a>
+                <a href="?filter=salary" id="filter-salary" class="filter-btn px-5 py-2 text-sm font-semibold rounded-xl {% if current_filter == 'salary' %}royal-gradient text-white{% else %}bg-white border border-gray-300 text-gray-700 hover:bg-gray-50{% endif %} transition-all duration-300">Salary</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Job Cards -->
+          {% for job in jobs %}
+          <div class="bg-white rounded-2xl card-shadow border border-gray-200 mb-4 hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer" onclick="window.location.href='{% url 'job_detail' job.id %}'">
+            <div class="p-6">
+              <div class="flex flex-col lg:flex-row gap-6">
+                <!-- Company Logo & Basic Info -->
+                <div class="flex items-start gap-4 lg:flex-1">
+                  <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                  </div>
+                  
+                  <div class="min-w-0 flex-1">
+                    <h3 class="text-xl font-bold text-gray-900 mb-1 line-clamp-2">{{ job.title }}</h3>
+                    <p class="text-lg text-gray-600 mb-2">{{ job.company }}</p>
+                    
+                    <div class="flex flex-wrap gap-3 text-sm text-gray-500 mb-4">
+                      <div class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        {{ job.location }}
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                        </svg>
+                        ${{ job.salary_min|floatformat:0 }} - ${{ job.salary_max|floatformat:0 }}
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {{ job.job_type|title }}
+                      </div>
+                    </div>
+
+                    <!-- Skills & Perks -->
+                    <div class="space-y-2 mb-4">
+                      <div class="flex flex-wrap gap-1">
+                        {% if job.skills_required %}
+                          {% for skill in job.skills_required|slice:":4" %}
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">{{ skill }}</span>
+                          {% endfor %}
+                          {% if job.skills_required|length > 4 %}
+                            <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">+{{ job.skills_required|length|add:"-4" }} more</span>
+                          {% endif %}
+                        {% else %}
+                          <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">Python</span>
+                          <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">Machine Learning</span>
+                          <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">SQL</span>
+                        {% endif %}
+                      </div>
+                      
+                      <div class="flex flex-wrap gap-1">
+                        <span class="px-2 py-1 bg-purple-100 text-purple-600 rounded text-xs border border-purple-200">⭐ Stock options</span>
+                        <span class="px-2 py-1 bg-purple-100 text-purple-600 rounded text-xs border border-purple-200">⭐ Unlimited PTO</span>
+                        <span class="px-2 py-1 bg-purple-100 text-purple-600 rounded text-xs border border-purple-200">⭐ Remote flexible</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- AI Match Score & Actions -->
+                <div class="lg:w-64 flex-shrink-0">
+                  <div class="bg-green-100 rounded-2xl p-4 mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-sm font-medium text-gray-700">AI Match Score</span>
+                      <div class="flex items-center gap-1">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                        <span class="text-2xl font-bold text-green-600">{{ job.match_score|default:"95" }}%</span>
+                      </div>
+                    </div>
+                    <div class="w-full bg-green-200 rounded-full h-2 mb-2">
+                      <div class="bg-green-600 h-2 rounded-full transition-all duration-500" style="width: {{ job.match_score|default:"95" }}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-600">
+                      {{ job.match_score|default:"95"|add:"0"|floatformat:0 }}% match - Excellent fit!
+                    </p>
+                  </div>
+
+                  <!-- Action Buttons -->
+                  <div class="space-y-2">
+                    <button onclick="stopPropagation(event); window.location.href='{% url 'job_detail' job.id %}'" class="w-full px-6 py-3 royal-gradient hover:opacity-90 text-white font-medium rounded-xl transition-all duration-300">
+                      View Details
+                    </button>
+                    <button onclick="stopPropagation(event); applyJob({{ job.id }})" class="w-full px-6 py-3 bg-white border-2 border-blue-200 text-blue-600 hover:bg-blue-50 font-medium rounded-xl flex items-center justify-center gap-2 transition-all duration-300">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                      </svg>
+                      Quick Apply
+                    </button>
+                  </div>
+
+                  <!-- Match Breakdown -->
+                  <div class="mt-4 space-y-2 text-xs">
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Skills Match</span>
+                      <span class="font-medium">{{ job.match_score|default:"95"|add:"-3" }}%</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Experience</span>
+                      <span class="font-medium">{{ job.match_score|default:"95"|add:"-25" }}%</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Culture Fit</span>
+                      <span class="font-medium">{{ job.match_score|default:"95"|add:"-15" }}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="bg-white rounded-2xl card-shadow border border-gray-200 mb-4 text-center p-8">
+            <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">No jobs found</h3>
+            <p class="text-gray-500">Check back later for new opportunities!</p>
+          </div>
+          {% endfor %}
+
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+          
+          <!-- Profile Strength -->
+          <div class="bg-white rounded-2xl card-shadow border border-gray-200">
+            <div class="p-6">
+              <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                </svg>
+                Profile Strength
+              </h3>
+              <div class="space-y-4">
+                <div>
+                  <div class="flex justify-between text-sm mb-2">
+                    <span class="text-gray-600">Completeness</span>
+                    <span class="font-semibold">{{ profile.profile_strength|default:"60" }}%</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: {{ profile.profile_strength|default:"60" }}%"></div>
+                  </div>
+                </div>
+                
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-600">Resume uploaded</span>
+                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">✓</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-600">Skills listed</span>
+                    <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium">0</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-600">Salary expectation</span>
+                    <span class="px-2 py-1 bg-red-100 text-red-600 rounded text-xs font-medium">Missing</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Insights -->
+          <div class="bg-white rounded-2xl card-shadow border border-gray-200">
+            <div class="p-6">
+              <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+                AI Insights
+              </h3>
+              <div class="space-y-4">
+                <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <h4 class="font-semibold text-sm text-gray-900 mb-1">Boost Your Profile</h4>
+                      <p class="text-xs text-gray-600 mb-3">Learning Python could increase your match rate by 25%</p>
+                      <button class="h-7 px-3 text-xs border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200">
+                        Start Learning
+                        <svg class="w-3 h-3 ml-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="bg-yellow-50 rounded-xl p-4 border border-yellow-100">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <h4 class="font-semibold text-sm text-gray-900 mb-1">Application Strategy</h4>
+                      <p class="text-xs text-gray-600 mb-3">Your response rate is 40% higher for remote positions</p>
+                      <button class="h-7 px-3 text-xs border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200">
+                        Filter Remote Jobs
+                        <svg class="w-3 h-3 ml-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="bg-white rounded-2xl card-shadow border border-gray-200">
+            <div class="p-6">
+              <h3 class="text-lg font-bold text-gray-900 mb-4">This Week</h3>
+              <div class="space-y-3">
+                <div class="flex justify-between">
+                  <span class="text-sm text-gray-600">Profile views</span>
+                  <span class="text-sm font-semibold text-gray-900">24</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-sm text-gray-600">Job matches</span>
+                  <span class="text-sm font-semibold text-gray-900">12</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-sm text-gray-600">Applications sent</span>
+                  <span class="text-sm font-semibold text-gray-900">{{ applications_count }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Optimize Modal -->
+  <div id="optimizeModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b">
+        <div class="flex justify-between items-center">
+          <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+            </svg>
+            Resume Optimization
+          </h3>
+          <button onclick="closeOptimizeModal()" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <p class="text-gray-600 mt-2">
+          AI-powered suggestions to tailor your resume for the <span class="font-semibold">Senior Data Scientist</span> role.
+        </p>
+      </div>
+      
+      <div class="p-6 max-h-[60vh] overflow-y-auto">
+        <!-- Optimization Suggestions -->
+        <div class="space-y-4">
+          <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-gray-900 mb-1">Highlight Key Skills</p>
+              <p class="text-sm text-gray-700">Emphasize your Python and Machine Learning experience in your skills section</p>
+            </div>
+          </div>
+          
+          <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-gray-900 mb-1">Add Relevant Projects</p>
+              <p class="text-sm text-gray-700">Include data science projects that demonstrate your expertise with TensorFlow and SQL</p>
+            </div>
+          </div>
+          
+          <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+            <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+              <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-gray-900 mb-1">Quantify Your Achievements</p>
+              <p class="text-sm text-gray-700">Use specific metrics like "Improved model accuracy by 15%" to showcase impact</p>
+            </div>
+          </div>
+          
+          <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+            <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-gray-900 mb-1">Tailor Your Summary</p>
+              <p class="text-sm text-gray-700">Mention "driving business insights" to align with the job description language</p>
+            </div>
+          </div>
+          
+          <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+            <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+              <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-gray-900 mb-1">Optimize Keywords</p>
+              <p class="text-sm text-gray-700">Ensure keywords like 'Python' and 'SQL' are prominent throughout your resume</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="p-6 border-t text-right">
+        <button onclick="closeOptimizeModal()" class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors duration-200">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resume Upload Modal -->
+  <div id="resumeUploadModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+      <div class="p-6 border-b">
+        <div class="flex justify-between items-center">
+          <h3 class="text-2xl font-bold text-gray-900">Upload Your Resume</h3>
+          <button onclick="closeResumeUpload()" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <p class="text-gray-600 mt-2">Upload your resume to get personalized job matches and AI insights</p>
+      </div>
+      
+      <div class="p-6">
+        <div id="dropzone" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors cursor-pointer hover:bg-blue-50">
+          <input type="file" id="fileInput" accept=".pdf" class="hidden">
+          
+          <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+          </div>
+          
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Drop your resume here</h3>
+          <p class="text-gray-600 mb-4">or click to browse your files</p>
+          
+          <button onclick="document.getElementById('fileInput').click()" class="px-6 py-2 bg-white border border-blue-300 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors duration-200">
+            Choose PDF File
+          </button>
+          
+          <p class="text-xs text-gray-500 mt-4">Only PDF files are supported (max 10MB)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Prevent event bubbling for action buttons
+    function stopPropagation(event) {
+      event.stopPropagation();
+    }
+
+    // Optimize modal functions
+    function openOptimizeModal(jobId = null) {
+      document.getElementById('optimizeModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    function closeOptimizeModal() {
+      document.getElementById('optimizeModal').classList.add('hidden');
+      document.body.style.overflow = 'auto'; // Restore scrolling
+    }
+
+    function generateOptimizedResume() {
+      // Show loading state with modern design
+      const modal = document.getElementById('optimizeModal');
+      const content = modal.querySelector('.p-6.max-h-\\[60vh\\]');
+      
+      content.innerHTML = `
+        <div class="text-center py-8">
+          <div class="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p class="text-gray-600">Generating personalized insights...</p>
+        </div>
+      `;
+      
+      // Simulate AI processing
+      setTimeout(() => {
+        content.innerHTML = `
+          <div class="space-y-4">
+            <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>
+                  <p class="font-semibold text-gray-900">Resume Optimized!</p>
+                  <p class="text-sm text-gray-600">Your resume has been tailored for this position</p>
+                </div>
+              </div>
+            </div>
+            <div class="text-center">
+              <button onclick="closeOptimizeModal()" class="px-6 py-3 royal-gradient hover:opacity-90 text-white font-semibold rounded-xl transition-all duration-300">
+                Download Optimized Resume
+              </button>
+            </div>
+          </div>
+        `;
+      }, 2000);
+    }
+
+    // Resume upload functions
+    function openResumeUpload() {
+      document.getElementById('resumeUploadModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    function closeResumeUpload() {
+      document.getElementById('resumeUploadModal').classList.add('hidden');
+      document.body.style.overflow = 'auto'; // Restore scrolling
+    }
+
+    // File upload handling
+    function handleFileUpload() {
+      const fileInput = document.getElementById('fileInput');
+      const dropzone = document.getElementById('dropzone');
+      
+      fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          uploadFile(file);
+        }
+      });
+
+      // Drag and drop functionality
+      dropzone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropzone.classList.add('border-blue-400', 'bg-blue-50');
+      });
+
+      dropzone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dropzone.classList.remove('border-blue-400', 'bg-blue-50');
+      });
+
+      dropzone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropzone.classList.remove('border-blue-400', 'bg-blue-50');
+        
+        const file = e.dataTransfer.files[0];
+        if (file && file.type === 'application/pdf') {
+          uploadFile(file);
+        } else {
+          alert('Please upload a PDF file only.');
+        }
+      });
+    }
+
+    function uploadFile(file) {
+      const dropzone = document.getElementById('dropzone');
+      
+      // Show upload progress with modern design
+      dropzone.innerHTML = `
+        <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <svg class="animate-spin w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-blue-600 mb-2">Uploading ${file.name}...</h3>
+        <p class="text-sm text-gray-500 mb-4">Analyzing your CV with AI...</p>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div class="bg-blue-600 h-2 rounded-full animate-pulse" style="width: 70%"></div>
+        </div>
+      `;
+      
+      // Upload file and extract skills using API
+      const formData = new FormData();
+      formData.append('resume', file);
+      
+      fetch('/api/upload-resume/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Show success with extracted skills
+          let skillsHTML = '';
+          if (data.skills_found && data.skills_found.length > 0) {
+            skillsHTML = `
+              <div class="mt-4 bg-blue-50 rounded-xl p-4 border border-blue-200">
+                <h4 class="font-semibold text-gray-900 mb-3">📊 Skills Detected (${data.num_skills}):</h4>
+                <div class="flex flex-wrap gap-2">
+                  ${data.skills_found.slice(0, 12).map(skill => `
+                    <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">${skill}</span>
+                  `).join('')}
+                  ${data.num_skills > 12 ? `<span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">+${data.num_skills - 12} more</span>` : ''}
+                </div>
+              </div>
+              ${data.experience_years > 0 ? `<div class="mt-2 text-sm text-gray-700"><strong>Experience:</strong> ${data.experience_years} years</div>` : ''}
+              ${data.salary_expectation > 0 ? `<div class="text-sm text-gray-700"><strong>Salary Range:</strong> $${(data.salary_expectation/1000).toFixed(0)}k+</div>` : ''}
+            `;
+          }
+          
+          dropzone.innerHTML = `
+            <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-green-600 mb-2">CV Analyzed Successfully!</h3>
+            <p class="text-sm text-gray-500 mb-2">Your profile has been updated with extracted information</p>
+            ${skillsHTML}
+            <div class="mt-4 flex items-center gap-2 text-green-600">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span class="font-medium">Finding best matching jobs...</span>
+            </div>
+          `;
+          
+          setTimeout(() => {
+            closeResumeUpload();
+            // Reload page to show updated matches
+            location.reload();
+          }, 2500);
+        } else {
+          dropzone.innerHTML = `
+            <div class="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-red-600 mb-2">Upload Failed</h3>
+            <p class="text-sm text-gray-500 mb-4">${data.error || 'An error occurred'}</p>
+            <button onclick="handleFileUpload()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Try Again</button>
+          `;
+        }
+      })
+      .catch(error => {
+        console.error('Upload error:', error);
+        dropzone.innerHTML = `
+          <div class="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-red-600 mb-2">Network Error</h3>
+          <p class="text-sm text-gray-500 mb-4">Failed to upload file</p>
+          <button onclick="handleFileUpload()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Try Again</button>
+        `;
+      });
+    }
+
+    function updateProfileStrength() {
+      // Update the profile strength section with smooth animation
+      const completenessElement = document.querySelector('.bg-blue-600');
+      if (completenessElement) {
+        completenessElement.style.transition = 'width 0.5s ease-in-out';
+        completenessElement.style.width = '85%';
+      }
+      
+      const percentageElement = document.querySelector('.font-semibold');
+      if (percentageElement && percentageElement.textContent.includes('60%')) {
+        percentageElement.textContent = '85%';
+      }
+      
+      // Add success message with modern design
+      const aiInsights = document.querySelector('.space-y-4');
+      if (aiInsights) {
+        aiInsights.innerHTML = `
+          <div class="bg-green-50 rounded-xl p-4 border border-green-100">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="font-semibold text-sm text-gray-900 mb-1">Resume Updated!</h4>
+                <p class="text-xs text-gray-600 mb-3">Your profile strength has improved to 85%</p>
+                <button class="h-7 px-3 text-xs border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200">
+                  View Profile
+                  <svg class="w-3 h-3 ml-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="font-semibold text-sm text-gray-900 mb-1">Boost Your Profile</h4>
+                <p class="text-xs text-gray-600 mb-3">Learning Python could increase your match rate by 25%</p>
+                <button class="h-7 px-3 text-xs border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200">
+                  Start Learning
+                  <svg class="w-3 h-3 ml-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Job application function
+    function applyJob(jobId) {
+      const button = event.target;
+      const originalText = button.innerHTML;
+      
+      // Show loading state
+      button.innerHTML = `
+        <svg class="animate-spin w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        Applying...
+      `;
+      button.disabled = true;
+      
+      // Simulate API call
+      fetch(`/api/apply-job/${jobId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          button.innerHTML = `
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Applied
+          `;
+          button.classList.remove('bg-white', 'border-2', 'border-blue-200', 'text-blue-600', 'hover:bg-blue-50');
+          button.classList.add('bg-green-100', 'text-green-700', 'border-green-200');
+          
+          // Update applications count
+          const applicationsCount = document.querySelector('.text-2xl.font-bold.text-gray-900');
+          if (applicationsCount) {
+            applicationsCount.textContent = parseInt(applicationsCount.textContent) + 1;
+          }
+          
+          alert('Application submitted successfully!');
+        } else {
+          button.innerHTML = originalText;
+          button.disabled = false;
+          alert('Failed to apply. Please try again.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        button.innerHTML = originalText;
+        button.disabled = false;
+        alert('Failed to apply. Please try again.');
+      });
+    }
+
+    // Initialize file upload handling when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      handleFileUpload();
+    });
+  </script>
+
+</body>
+</html>
+
+
+{% comment %} {% load static %}
+{% csrf_token %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Candidate Dashboard - SkillSeva</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'navy-blue': '#1A1F71',
+            'royal-purple': '#3C1E5F',
+            'muted-gold': '#D4AF37',
+            'slate-gray': '#2F2F2F',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .royal-gradient {
+      background: linear-gradient(135deg, #1A1F71 0%, #3C1E5F 100%);
+    }
+    .card-shadow {
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+    .role-card {
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .role-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <!-- Navbar -->
+  <nav class="royal-gradient shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+            </svg>
+          </div>
+          <div>
+            <span class="text-xl font-bold text-white">SkillSevak</span>
+            <p class="text-xs text-white/80">Find Your Dream Job</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+              <span class="text-white font-medium text-sm">
+                {% if user %}{{ user.first_name|default:user.username|slice:":1"|upper }}{% else %}U{% endif %}
+              </span>
+            </div>
+            <span class="text-white">{% if user %}{{ user.first_name|default:user.username }}{% else %}Guest User{% endif %}</span>
+          </div>
+          <a href="{% url 'logout' %}" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors backdrop-blur-sm">Logout</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Dashboard Content -->
+  <div class="min-h-screen p-6 md:p-8">
+    <div class="max-w-7xl mx-auto">
+      
+      <!-- Header -->
+      <div class="mb-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome back, {% if user %}{{ user.first_name|default:user.username }}{% else %}Candidate{% endif %}!</h1>
+            <p class="text-gray-600">Here are your latest AI-powered job recommendations</p>
+          </div>
+          <button onclick="openResumeUpload()" class="px-6 py-3 royal-gradient hover:opacity-90 text-white font-semibold rounded-xl flex items-center gap-2 shadow-md transition-all duration-300 hover:shadow-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            Upload Resume
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-2xl p-6 card-shadow border border-gray-200 hover:shadow-lg transition-all duration-300">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center">
+              <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+              </svg>
+            </div>
+            <div class="text-right">
+              <div class="text-2xl font-bold text-gray-900">{{ applications_count }}</div>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-900 mb-1">Applications Sent</p>
+            <p class="text-xs text-gray-500">This month</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 card-shadow border border-gray-200 hover:shadow-lg transition-all duration-300">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center">
+              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="text-right">
+              <div class="text-2xl font-bold text-gray-900">{% if applications_count > 0 %}75%{% else %}0%{% endif %}</div>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-900 mb-1">Response Rate</p>
+            <p class="text-xs text-gray-500">Average response</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 card-shadow border border-gray-200 hover:shadow-lg transition-all duration-300">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
+              <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="text-right">
+              <div class="text-2xl font-bold text-gray-900">{{ interviews_count }}</div>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-900 mb-1">Interviews</p>
+            <p class="text-xs text-gray-500">Scheduled</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div class="grid lg:grid-cols-4 gap-8">
+        
+        <!-- Jobs Section -->
+        <div class="lg:col-span-3">
+          
+          <!-- Filter Header -->
+          <div class="bg-white rounded-2xl card-shadow border border-gray-200 p-6 mb-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                </svg>
+                AI Recommended Jobs
+              </h2>
+              <div class="flex gap-2">
+                <a href="?filter=best_match" id="filter-best" class="filter-btn px-5 py-2 text-sm font-semibold rounded-xl {% if current_filter == 'best_match' %}royal-gradient text-white{% else %}bg-white border border-gray-300 text-gray-700 hover:bg-gray-50{% endif %} transition-all duration-300">Best Match</a>
+                <a href="?filter=newest_first" id="filter-newest" class="filter-btn px-5 py-2 text-sm font-semibold rounded-xl {% if current_filter == 'newest_first' %}royal-gradient text-white{% else %}bg-white border border-gray-300 text-gray-700 hover:bg-gray-50{% endif %} transition-all duration-300">Newest</a>
+                <a href="?filter=salary" id="filter-salary" class="filter-btn px-5 py-2 text-sm font-semibold rounded-xl {% if current_filter == 'salary' %}royal-gradient text-white{% else %}bg-white border border-gray-300 text-gray-700 hover:bg-gray-50{% endif %} transition-all duration-300">Salary</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Job Cards -->
+          {% for job in jobs %}
+          <div class="bg-white rounded-2xl card-shadow border border-gray-200 mb-4 hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer" onclick="window.location.href='{% url 'job_detail' job.id %}'">
+            <div class="p-6">
+              <div class="flex flex-col lg:flex-row gap-6">
+                <!-- Company Logo & Basic Info -->
+                <div class="flex items-start gap-4 lg:flex-1">
+                  <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                  </div>
+                  
+                  <div class="min-w-0 flex-1">
+                    <h3 class="text-xl font-bold text-gray-900 mb-1 line-clamp-2">{{ job.title }}</h3>
+                    <p class="text-lg text-gray-600 mb-2">{{ job.company }}</p>
+                    
+                    <div class="flex flex-wrap gap-3 text-sm text-gray-500 mb-4">
+                      <div class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        {{ job.location }}
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                        </svg>
+                        ${{ job.salary_min|floatformat:0 }} - ${{ job.salary_max|floatformat:0 }}
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {{ job.job_type|title }}
+                      </div>
+                    </div>
+
+                    <!-- Skills & Perks -->
+                    <div class="space-y-2 mb-4">
+                      <div class="flex flex-wrap gap-1">
+                        {% if job.skills_required %}
+                          {% for skill in job.skills_required|slice:":4" %}
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">{{ skill }}</span>
+                          {% endfor %}
+                          {% if job.skills_required|length > 4 %}
+                            <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">+{{ job.skills_required|length|add:"-4" }} more</span>
+                          {% endif %}
+                        {% else %}
+                          <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">Python</span>
+                          <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">Machine Learning</span>
+                          <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">SQL</span>
+                        {% endif %}
+                      </div>
+                      
+                      <div class="flex flex-wrap gap-1">
+                        <span class="px-2 py-1 bg-purple-100 text-purple-600 rounded text-xs border border-purple-200">⭐ Stock options</span>
+                        <span class="px-2 py-1 bg-purple-100 text-purple-600 rounded text-xs border border-purple-200">⭐ Unlimited PTO</span>
+                        <span class="px-2 py-1 bg-purple-100 text-purple-600 rounded text-xs border border-purple-200">⭐ Remote flexible</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- AI Match Score & Actions -->
+                <div class="lg:w-64 flex-shrink-0">
+                  <div class="bg-green-100 rounded-2xl p-4 mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-sm font-medium text-gray-700">AI Match Score</span>
+                      <div class="flex items-center gap-1">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                        <span class="text-2xl font-bold text-green-600">{{ job.match_score|default:"95" }}%</span>
+                      </div>
+                    </div>
+                    <div class="w-full bg-green-200 rounded-full h-2 mb-2">
+                      <div class="bg-green-600 h-2 rounded-full transition-all duration-500" style="width: {{ job.match_score|default:"95" }}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-600">
+                      {{ job.match_score|default:"95"|add:"0"|floatformat:0 }}% match - Excellent fit!
+                    </p>
+                  </div>
+
+                  <!-- Action Buttons -->
+                  <div class="space-y-2">
+                    <button onclick="stopPropagation(event); window.location.href='{% url 'job_detail' job.id %}'" class="w-full px-6 py-3 royal-gradient hover:opacity-90 text-white font-medium rounded-xl transition-all duration-300">
+                      View Details
+                    </button>
+                    <button onclick="stopPropagation(event); applyJob({{ job.id }})" class="w-full px-6 py-3 bg-white border-2 border-blue-200 text-blue-600 hover:bg-blue-50 font-medium rounded-xl flex items-center justify-center gap-2 transition-all duration-300">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                      </svg>
+                      Quick Apply
+                    </button>
+                  </div>
+
+                  <!-- Match Breakdown -->
+                  <div class="mt-4 space-y-2 text-xs">
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Skills Match</span>
+                      <span class="font-medium">{{ job.match_score|default:"95"|add:"-3" }}%</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Experience</span>
+                      <span class="font-medium">{{ job.match_score|default:"95"|add:"-25" }}%</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Culture Fit</span>
+                      <span class="font-medium">{{ job.match_score|default:"95"|add:"-15" }}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="bg-white rounded-2xl card-shadow border border-gray-200 mb-4 text-center p-8">
+            <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">No jobs found</h3>
+            <p class="text-gray-500">Check back later for new opportunities!</p>
+          </div>
+          {% endfor %}
+
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+          
+          <!-- Profile Strength -->
+          <div class="bg-white rounded-2xl card-shadow border border-gray-200">
+            <div class="p-6">
+              <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                </svg>
+                Profile Strength
+              </h3>
+              <div class="space-y-4">
+                <div>
+                  <div class="flex justify-between text-sm mb-2">
+                    <span class="text-gray-600">Completeness</span>
+                    <span class="font-semibold">{{ profile.profile_strength|default:"60" }}%</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: {{ profile.profile_strength|default:"60" }}%"></div>
+                  </div>
+                </div>
+                
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-600">Resume uploaded</span>
+                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">✓</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-600">Skills listed</span>
+                    <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium">0</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-600">Salary expectation</span>
+                    <span class="px-2 py-1 bg-red-100 text-red-600 rounded text-xs font-medium">Missing</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Insights -->
+          <div class="bg-white rounded-2xl card-shadow border border-gray-200">
+            <div class="p-6">
+              <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+                AI Insights
+              </h3>
+              <div class="space-y-4">
+                <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <h4 class="font-semibold text-sm text-gray-900 mb-1">Boost Your Profile</h4>
+                      <p class="text-xs text-gray-600 mb-3">Learning Python could increase your match rate by 25%</p>
+                      <button class="h-7 px-3 text-xs border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200">
+                        Start Learning
+                        <svg class="w-3 h-3 ml-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="bg-yellow-50 rounded-xl p-4 border border-yellow-100">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <h4 class="font-semibold text-sm text-gray-900 mb-1">Application Strategy</h4>
+                      <p class="text-xs text-gray-600 mb-3">Your response rate is 40% higher for remote positions</p>
+                      <button class="h-7 px-3 text-xs border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200">
+                        Filter Remote Jobs
+                        <svg class="w-3 h-3 ml-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="bg-white rounded-2xl card-shadow border border-gray-200">
+            <div class="p-6">
+              <h3 class="text-lg font-bold text-gray-900 mb-4">This Week</h3>
+              <div class="space-y-3">
+                <div class="flex justify-between">
+                  <span class="text-sm text-gray-600">Profile views</span>
+                  <span class="text-sm font-semibold text-gray-900">24</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-sm text-gray-600">Job matches</span>
+                  <span class="text-sm font-semibold text-gray-900">12</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-sm text-gray-600">Applications sent</span>
+                  <span class="text-sm font-semibold text-gray-900">{{ applications_count }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Optimize Modal -->
+  <div id="optimizeModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b">
+        <div class="flex justify-between items-center">
+          <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+            </svg>
+            Resume Optimization
+          </h3>
+          <button onclick="closeOptimizeModal()" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <p class="text-gray-600 mt-2">
+          AI-powered suggestions to tailor your resume for the <span class="font-semibold">Senior Data Scientist</span> role.
+        </p>
+      </div>
+      
+      <div class="p-6 max-h-[60vh] overflow-y-auto">
+        <!-- Optimization Suggestions -->
+        <div class="space-y-4">
+          <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-gray-900 mb-1">Highlight Key Skills</p>
+              <p class="text-sm text-gray-700">Emphasize your Python and Machine Learning experience in your skills section</p>
+            </div>
+          </div>
+          
+          <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-gray-900 mb-1">Add Relevant Projects</p>
+              <p class="text-sm text-gray-700">Include data science projects that demonstrate your expertise with TensorFlow and SQL</p>
+            </div>
+          </div>
+          
+          <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+            <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+              <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-gray-900 mb-1">Quantify Your Achievements</p>
+              <p class="text-sm text-gray-700">Use specific metrics like "Improved model accuracy by 15%" to showcase impact</p>
+            </div>
+          </div>
+          
+          <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+            <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-gray-900 mb-1">Tailor Your Summary</p>
+              <p class="text-sm text-gray-700">Mention "driving business insights" to align with the job description language</p>
+            </div>
+          </div>
+          
+          <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+            <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+              <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-gray-900 mb-1">Optimize Keywords</p>
+              <p class="text-sm text-gray-700">Ensure keywords like 'Python' and 'SQL' are prominent throughout your resume</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="p-6 border-t text-right">
+        <button onclick="closeOptimizeModal()" class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors duration-200">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resume Upload Modal -->
+  <div id="resumeUploadModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+      <div class="p-6 border-b">
+        <div class="flex justify-between items-center">
+          <h3 class="text-2xl font-bold text-gray-900">Upload Your Resume</h3>
+          <button onclick="closeResumeUpload()" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <p class="text-gray-600 mt-2">Upload your resume to get personalized job matches and AI insights</p>
+      </div>
+      
+      <div class="p-6">
+        <div id="dropzone" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors cursor-pointer hover:bg-blue-50">
+          <input type="file" id="fileInput" accept=".pdf" class="hidden">
+          
+          <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+          </div>
+          
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Drop your resume here</h3>
+          <p class="text-gray-600 mb-4">or click to browse your files</p>
+          
+          <button onclick="document.getElementById('fileInput').click()" class="px-6 py-2 bg-white border border-blue-300 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors duration-200">
+            Choose PDF File
+          </button>
+          
+          <p class="text-xs text-gray-500 mt-4">Only PDF files are supported (max 10MB)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Prevent event bubbling for action buttons
+    function stopPropagation(event) {
+      event.stopPropagation();
+    }
+
+    // Optimize modal functions
+    function openOptimizeModal(jobId = null) {
+      document.getElementById('optimizeModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    function closeOptimizeModal() {
+      document.getElementById('optimizeModal').classList.add('hidden');
+      document.body.style.overflow = 'auto'; // Restore scrolling
+    }
+
+    function generateOptimizedResume() {
+      // Show loading state with modern design
+      const modal = document.getElementById('optimizeModal');
+      const content = modal.querySelector('.p-6.max-h-\\[60vh\\]');
+      
+      content.innerHTML = `
+        <div class="text-center py-8">
+          <div class="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p class="text-gray-600">Generating personalized insights...</p>
+        </div>
+      `;
+      
+      // Simulate AI processing
+      setTimeout(() => {
+        content.innerHTML = `
+          <div class="space-y-4">
+            <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>
+                  <p class="font-semibold text-gray-900">Resume Optimized!</p>
+                  <p class="text-sm text-gray-600">Your resume has been tailored for this position</p>
+                </div>
+              </div>
+            </div>
+            <div class="text-center">
+              <button onclick="closeOptimizeModal()" class="px-6 py-3 royal-gradient hover:opacity-90 text-white font-semibold rounded-xl transition-all duration-300">
+                Download Optimized Resume
+              </button>
+            </div>
+          </div>
+        `;
+      }, 2000);
+    }
+
+    // Resume upload functions
+    function openResumeUpload() {
+      document.getElementById('resumeUploadModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    function closeResumeUpload() {
+      document.getElementById('resumeUploadModal').classList.add('hidden');
+      document.body.style.overflow = 'auto'; // Restore scrolling
+    }
+
+    // File upload handling
+    function handleFileUpload() {
+      const fileInput = document.getElementById('fileInput');
+      const dropzone = document.getElementById('dropzone');
+      
+      fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          uploadFile(file);
+        }
+      });
+
+      // Drag and drop functionality
+      dropzone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropzone.classList.add('border-blue-400', 'bg-blue-50');
+      });
+
+      dropzone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dropzone.classList.remove('border-blue-400', 'bg-blue-50');
+      });
+
+      dropzone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropzone.classList.remove('border-blue-400', 'bg-blue-50');
+        
+        const file = e.dataTransfer.files[0];
+        if (file && file.type === 'application/pdf') {
+          uploadFile(file);
+        } else {
+          alert('Please upload a PDF file only.');
+        }
+      });
+    }
+
+    function uploadFile(file) {
+      const dropzone = document.getElementById('dropzone');
+      
+      // Show upload progress with modern design
+      dropzone.innerHTML = `
+        <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <svg class="animate-spin w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-blue-600 mb-2">Uploading ${file.name}...</h3>
+        <p class="text-sm text-gray-500 mb-4">Processing your resume</p>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div class="bg-blue-600 h-2 rounded-full animate-pulse" style="width: 70%"></div>
+        </div>
+      `;
+      
+      // Simulate file upload
+      setTimeout(() => {
+        dropzone.innerHTML = `
+          <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-green-600 mb-2">Upload successful!</h3>
+          <p class="text-sm text-gray-500 mb-4">Your resume has been processed and analyzed</p>
+          <div class="flex items-center gap-2 text-green-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span class="font-medium">Ready for AI matching!</span>
+          </div>
+        `;
+        
+        setTimeout(() => {
+          closeResumeUpload();
+          // Update profile strength
+          updateProfileStrength();
+        }, 1500);
+      }, 2000);
+    }
+
+    function updateProfileStrength() {
+      // Update the profile strength section with smooth animation
+      const completenessElement = document.querySelector('.bg-blue-600');
+      if (completenessElement) {
+        completenessElement.style.transition = 'width 0.5s ease-in-out';
+        completenessElement.style.width = '85%';
+      }
+      
+      const percentageElement = document.querySelector('.font-semibold');
+      if (percentageElement && percentageElement.textContent.includes('60%')) {
+        percentageElement.textContent = '85%';
+      }
+      
+      // Add success message with modern design
+      const aiInsights = document.querySelector('.space-y-4');
+      if (aiInsights) {
+        aiInsights.innerHTML = `
+          <div class="bg-green-50 rounded-xl p-4 border border-green-100">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="font-semibold text-sm text-gray-900 mb-1">Resume Updated!</h4>
+                <p class="text-xs text-gray-600 mb-3">Your profile strength has improved to 85%</p>
+                <button class="h-7 px-3 text-xs border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200">
+                  View Profile
+                  <svg class="w-3 h-3 ml-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="font-semibold text-sm text-gray-900 mb-1">Boost Your Profile</h4>
+                <p class="text-xs text-gray-600 mb-3">Learning Python could increase your match rate by 25%</p>
+                <button class="h-7 px-3 text-xs border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200">
+                  Start Learning
+                  <svg class="w-3 h-3 ml-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Job application function
+    function applyJob(jobId) {
+      const button = event.target;
+      const originalText = button.innerHTML;
+      
+      // Show loading state
+      button.innerHTML = `
+        <svg class="animate-spin w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        Applying...
+      `;
+      button.disabled = true;
+      
+      // Simulate API call
+      fetch(`/api/apply-job/${jobId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          button.innerHTML = `
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Applied
+          `;
+          button.classList.remove('bg-white', 'border-2', 'border-blue-200', 'text-blue-600', 'hover:bg-blue-50');
+          button.classList.add('bg-green-100', 'text-green-700', 'border-green-200');
+          
+          // Update applications count
+          const applicationsCount = document.querySelector('.text-2xl.font-bold.text-gray-900');
+          if (applicationsCount) {
+            applicationsCount.textContent = parseInt(applicationsCount.textContent) + 1;
+          }
+          
+          alert('Application submitted successfully!');
+        } else {
+          button.innerHTML = originalText;
+          button.disabled = false;
+          alert('Failed to apply. Please try again.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        button.innerHTML = originalText;
+        button.disabled = false;
+        alert('Failed to apply. Please try again.');
+      });
+    }
+
+    // Initialize file upload handling when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      handleFileUpload();
+    });
+  </script>
+
+</body>
+</html> {% endcomment %}

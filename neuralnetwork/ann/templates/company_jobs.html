@@ -1,0 +1,42 @@
+{% extends "recruiter_layout.html" %}
+
+{% block title %}My Jobs{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">My Job Postings</h1>
+      <p class="text-slate-500 text-sm">Manage all jobs posted by your company.</p>
+    </div>
+    <a href="{% url 'company_create_job' %}"
+       class="bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-xl">
+      Post New Job
+    </a>
+  </div>
+
+  <div class="space-y-3">
+    {% for job in jobs %}
+      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-5 flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-bold text-slate-800">{{ job.title }}</h3>
+          <p class="text-sm text-slate-500">{{ job.location }} · {{ job.category|default:"General" }}</p>
+          <p class="text-xs text-slate-400 mt-1">
+            {{ job.get_job_type_display }} · {{ job.created_at|date:"M j, Y" }}
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="{% url 'company_job_applicants' job.id %}"
+             class="text-xs font-semibold text-indigo-600 border border-indigo-200 rounded-xl px-3 py-1.5">
+            View Applicants
+          </a>
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-slate-500 text-sm">You haven't posted any jobs yet.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+

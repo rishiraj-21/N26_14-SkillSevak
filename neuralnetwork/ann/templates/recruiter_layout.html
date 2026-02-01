@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{% block title %}RecruiterAI{% endblock %}</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-[#F8FAFC] text-slate-900">
+    <div class="flex min-h-screen">
+      <!-- Sidebar -->
+      <aside class="hidden md:flex md:flex-col w-64 bg-white/80 backdrop-blur-xl border-r border-slate-200/60">
+        <!-- Branding -->
+        <div class="px-6 py-5 border-b border-slate-200/60">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-700 flex items-center justify-center shadow-sm">
+              <span class="text-white font-bold text-lg">R</span>
+            </div>
+            <div>
+              <div class="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-500">Recruiter</div>
+              <div class="text-lg font-bold text-slate-800">RecruiterAI</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nav -->
+        <nav class="flex-1 px-3 py-4 space-y-1 text-sm font-medium">
+          {# Active states are handled with Django url names; adjust as needed #}
+          <a href="{% url 'dashboard' %}"
+             class="flex items-center gap-3 px-3 py-2 rounded-xl transition-colors {% if request.resolver_match.url_name == 'dashboard' %}bg-indigo-600 text-white{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+            <span class="w-5 h-5 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-semibold">D</span>
+            <span>Dashboard</span>
+          </a>
+          <a href="{% url 'jobs' %}"
+             class="flex items-center gap-3 px-3 py-2 rounded-xl transition-colors {% if request.resolver_match.url_name == 'jobs' %}bg-indigo-600 text-white{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+            <span class="w-5 h-5 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-semibold">J</span>
+            <span>Jobs</span>
+          </a>
+          <a href="{% url 'pipeline' %}"
+             class="flex items-center gap-3 px-3 py-2 rounded-xl transition-colors {% if request.resolver_match.url_name == 'pipeline' %}bg-indigo-600 text-white{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+            <span class="w-5 h-5 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-semibold">P</span>
+            <span>Pipeline</span>
+          </a>
+          <a href="{% url 'schedule' %}"
+             class="flex items-center gap-3 px-3 py-2 rounded-xl transition-colors {% if request.resolver_match.url_name == 'schedule' %}bg-indigo-600 text-white{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+            <span class="w-5 h-5 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-semibold">S</span>
+            <span>Schedule</span>
+          </a>
+          <a href="{% url 'analytics' %}"
+             class="flex items-center gap-3 px-3 py-2 rounded-xl transition-colors {% if request.resolver_match.url_name == 'analytics' %}bg-indigo-600 text-white{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+            <span class="w-5 h-5 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-semibold">A</span>
+            <span>Analytics</span>
+          </a>
+          <a href="{% url 'email_templates' %}"
+             class="flex items-center gap-3 px-3 py-2 rounded-xl transition-colors {% if request.resolver_match.url_name == 'email_templates' %}bg-indigo-600 text-white{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+            <span class="w-5 h-5 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-semibold">T</span>
+            <span>Templates</span>
+          </a>
+        </nav>
+      </aside>
+
+      <!-- Mobile header -->
+      <header class="md:hidden fixed inset-x-0 top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-slate-200/60">
+        <div class="flex items-center justify-between px-4 py-3">
+          <div class="flex items-center gap-2">
+            <div class="h-8 w-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-700 flex items-center justify-center shadow-sm">
+              <span class="text-white font-bold text-sm">R</span>
+            </div>
+            <span class="font-semibold text-slate-800">RecruiterAI</span>
+          </div>
+          {# You can wire this to a mobile drawer later if needed #}
+          <button type="button" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white/80 px-2.5 py-1.5 text-slate-700 shadow-sm">
+            <span class="sr-only">Open navigation</span>
+            <span class="h-0.5 w-5 bg-slate-700 block mb-1"></span>
+            <span class="h-0.5 w-5 bg-slate-700 block mb-1"></span>
+            <span class="h-0.5 w-5 bg-slate-700 block"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main content -->
+      <main class="flex-1 md:ml-0 md:pl-0 bg-[#F8FAFC]">
+        <div class="md:pl-0 w-full max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 pt-20 md:pt-10">
+          {% block content %}{% endblock %}
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
+
+

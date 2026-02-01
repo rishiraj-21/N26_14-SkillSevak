@@ -1,0 +1,3 @@
+# This directory stores trained model weights
+# Weights are not committed to git (see .gitignore)
+# Train locally with: python manage.py train_model

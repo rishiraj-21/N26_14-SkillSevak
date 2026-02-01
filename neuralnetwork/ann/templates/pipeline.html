@@ -1,0 +1,119 @@
+{% extends "recruiter_layout.html" %}
+
+{% block title %}Pipeline · RecruiterAI{% endblock %}
+
+{% block content %}
+  <div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-2">
+      <div>
+        <h1 class="text-3xl font-bold text-slate-800">Hiring Pipeline</h1>
+        <p class="text-slate-500 mt-1">Drag candidates between stages</p>
+      </div>
+      <div class="w-64 max-w-full">
+        <form method="get">
+          <label class="block text-xs font-medium text-slate-500 mb-1">
+            Filter by job
+          </label>
+          <select name="job_id"
+                  class="w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="">All Jobs</option>
+            {% for job in jobs %}
+              <option value="{{ job.id }}" {% if selected_job_id == job.id|stringformat:'s' %}selected{% endif %}>
+                {{ job.title }}
+              </option>
+            {% endfor %}
+          </select>
+        </form>
+      </div>
+    </div>
+
+    <!-- Kanban -->
+    <div class="flex gap-4 overflow-x-auto pb-4">
+      {% for column in stages %}
+        {% with stage_id=column.id %}
+          {% with stage_apps=applications_by_stage.stage_id %}
+            <div class="flex-shrink-0 w-80">
+              <div class="{{ column.color }} border-2 rounded-xl p-4 mb-3">
+                <h3 class="font-semibold text-slate-800 flex items-center justify-between">
+                  {{ column.label }}
+                  <span class="inline-flex items-center rounded-full bg-white/80 border border-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-700">
+                    {{ stage_apps|length }}
+                  </span>
+                </h3>
+              </div>
+
+              <div class="space-y-3 min-h-[500px] p-2 rounded-xl bg-slate-50/60">
+                {% for app in stage_apps %}
+                  {% with candidate=app.candidate job=app.job %}
+                    {% if candidate %}
+                      <div class="backdrop-blur-xl bg-white border border-slate-200/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-all">
+                        <div class="flex items-start gap-3 mb-3">
+                          {% if candidate.photo_url %}
+                            <img src="{{ candidate.photo_url }}"
+                                 alt="{{ candidate.name }}"
+                                 class="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100" />
+                          {% else %}
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-slate-100 flex items-center justify-center">
+                              <span class="w-5 h-5 text-indigo-600 text-xs font-semibold">C</span>
+                            </div>
+                          {% endif %}
+                          <div class="flex-1 min-w-0">
+                            <h4 class="font-semibold text-slate-800 truncate">
+                              {{ candidate.name }}
+                            </h4>
+                            <p class="text-xs text-slate-500 truncate">
+                              {{ candidate.role }}
+                            </p>
+                          </div>
+                        </div>
+
+                        {% if job %}
+                          <div class="flex items-center gap-2 text-xs text-slate-600 mb-2">
+                            <span class="inline-flex h-4 w-4 items-center justify-center rounded-md bg-slate-100 text-[9px] font-semibold">J</span>
+                            <span class="truncate">{{ job.title }}</span>
+                          </div>
+                        {% endif %}
+
+                        {% if app.rating %}
+                          <div class="flex gap-1 mb-2">
+                            {% for i in "12345" %}
+                              {% with idx=forloop.counter %}
+                                <div class="w-2 h-2 rounded-full {% if idx <= app.rating %}bg-amber-400{% else %}bg-slate-200{% endif %}"></div>
+                              {% endwith %}
+                            {% endfor %}
+                          </div>
+                        {% endif %}
+
+                        {% if candidate.skill_match_percentage %}
+                          <div class="flex gap-2">
+                            <div class="flex-1">
+                              <div class="text-xs text-slate-500 mb-1">Skill Match</div>
+                              <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-indigo-500 rounded-full"
+                                     style="width: {{ candidate.skill_match_percentage }}%;"></div>
+                              </div>
+                            </div>
+                            <div class="text-xs font-semibold text-indigo-600 mt-auto">
+                              {{ candidate.skill_match_percentage }}%
+                            </div>
+                          </div>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+                  {% endwith %}
+                {% empty %}
+                  <div class="h-32 flex items-center justify-center text-xs text-slate-400">
+                    No candidates in this stage
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endwith %}
+        {% endwith %}
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}
+
+

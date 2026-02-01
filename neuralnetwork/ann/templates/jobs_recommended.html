@@ -1,0 +1,36 @@
+{% extends "recruiter_layout.html" %}
+
+{% block title %}Recommended Jobs{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-800">Recommended for you</h1>
+    <p class="text-slate-500 text-sm">Jobs matched using your skills and profile.</p>
+  </div>
+
+  <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for job in jobs %}
+      <a href="{% url 'job_detail' job.id %}"
+         class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all">
+        <h3 class="text-lg font-bold text-slate-800 mb-1">{{ job.title }}</h3>
+        <p class="text-sm text-slate-500 mb-1">
+          {% if job.company_profile %}
+            {{ job.company_profile.company_name }}
+          {% else %}
+            {{ job.company }}
+          {% endif %}
+        </p>
+        <p class="text-sm text-slate-500 mb-1">{{ job.location }}</p>
+        <p class="text-xs text-slate-400">
+          {{ job.category|default:"General" }} · {{ job.job_type }}
+        </p>
+      </a>
+    {% empty %}
+      <p class="text-slate-500 text-sm">No recommendations yet. Add skills and a resume to your profile.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+

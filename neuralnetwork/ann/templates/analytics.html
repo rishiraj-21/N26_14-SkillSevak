@@ -1,0 +1,126 @@
+{% extends "recruiter_layout.html" %}
+
+{% block title %}Analytics · RecruiterAI{% endblock %}
+
+{% block content %}
+  <div class="space-y-8">
+    <div>
+      <h1 class="text-3xl font-bold text-slate-800 flex items-center gap-3">
+        <span class="w-8 h-8 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg font-semibold">📈</span>
+        Recruitment Analytics
+      </h1>
+      <p class="text-slate-500 mt-1">Track your hiring performance and metrics</p>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+            <span class="text-indigo-600 text-lg font-semibold">👥</span>
+          </div>
+          <span class="text-3xl font-bold text-indigo-600">{{ total_applications }}</span>
+        </div>
+        <p class="text-sm text-slate-600 font-medium">Total Applications</p>
+      </div>
+
+      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+            <span class="text-emerald-600 text-lg font-semibold">💼</span>
+          </div>
+          <span class="text-3xl font-bold text-emerald-600">{{ active_jobs }}</span>
+        </div>
+        <p class="text-sm text-slate-600 font-medium">Active Jobs</p>
+      </div>
+
+      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+            <span class="text-purple-600 text-lg font-semibold">⏱</span>
+          </div>
+          <span class="text-3xl font-bold text-purple-600">{{ scheduled_interviews }}</span>
+        </div>
+        <p class="text-sm text-slate-600 font-medium">Scheduled Interviews</p>
+      </div>
+
+      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+            <span class="text-amber-600 text-lg font-semibold">🎯</span>
+          </div>
+          <span class="text-3xl font-bold text-amber-600">{{ conversion_rate }}%</span>
+        </div>
+        <p class="text-sm text-slate-600 font-medium">Hire Conversion Rate</p>
+      </div>
+    </div>
+
+    <!-- Charts (HTML approximations of the Recharts visuals) -->
+    <div class="grid lg:grid-cols-2 gap-6">
+      <!-- Pipeline Funnel -->
+      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6 shadow-sm">
+        <h3 class="text-lg font-bold text-slate-800 mb-4">Hiring Pipeline</h3>
+        <div class="space-y-3">
+          {% for row in pipeline_data %}
+            <div>
+              <div class="flex items-center justify-between text-xs text-slate-600 mb-1">
+                <span>{{ row.stage }}</span>
+                <span class="font-semibold">{{ row.count }}</span>
+              </div>
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full rounded-full bg-indigo-500"
+                     style="width: {% if max_pipeline_count > 0 %}{% widthratio row.count max_pipeline_count 100 %}%{% else %}0%{% endif %};"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Source Distribution -->
+      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6 shadow-sm">
+        <h3 class="text-lg font-bold text-slate-800 mb-4">Application Sources</h3>
+        <div class="space-y-2">
+          {% for source in source_data %}
+            <div class="flex items-center justify-between text-sm">
+              <div class="flex items-center gap-2">
+                <span class="h-2 w-2 rounded-full"
+                      style="background-color: {{ source.color }};"></span>
+                <span class="text-slate-700">{{ source.name }}</span>
+              </div>
+              <div class="text-slate-600">
+                {{ source.value }} ({{ source.percent }}%)
+              </div>
+            </div>
+          {% empty %}
+            <p class="text-xs text-slate-400">No source data yet</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Performing Jobs -->
+    <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6 shadow-sm">
+      <h3 class="text-lg font-bold text-slate-800 mb-4">Top Performing Jobs</h3>
+      {% if top_jobs|length == 0 %}
+        <p class="text-sm text-slate-400">No job performance data yet.</p>
+      {% else %}
+        <div class="space-y-3">
+          {% for job in top_jobs %}
+            <div>
+              <div class="flex items-center justify-between text-xs text-slate-600 mb-1">
+                <span class="truncate max-w-xs">{{ job.name }}</span>
+                <span class="font-semibold">{{ job.applications }}</span>
+              </div>
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full rounded-full bg-purple-500"
+                     style="width: {% if max_job_applications > 0 %}{% widthratio job.applications max_job_applications 100 %}%{% else %}0%{% endif %};"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+
+

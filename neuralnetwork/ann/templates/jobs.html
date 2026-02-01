@@ -1,0 +1,193 @@
+{% extends "recruiter_layout.html" %}
+
+{% block title %}Jobs · RecruiterAI{% endblock %}
+
+{% block content %}
+  <div class="space-y-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between gap-4">
+      <div>
+        <h1 class="text-3xl font-bold text-slate-800 flex items-center gap-3">
+          <span class="w-8 h-8 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg font-semibold">J</span>
+          Job Openings
+        </h1>
+        <p class="text-slate-500 mt-1">Manage and track all your job postings</p>
+      </div>
+      <a href="{% url 'company_create_job' %}"
+         class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-indigo-700 hover:to-indigo-800">
+        <span class="mr-2 text-base leading-none">＋</span>
+        Post New Job
+      </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-slate-600 mb-1">Active Jobs</p>
+            <p class="text-3xl font-bold text-indigo-600">
+              {{ active_jobs }}
+            </p>
+          </div>
+          <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+            <span class="text-indigo-600 font-semibold text-lg">J</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-slate-600 mb-1">Total Applications</p>
+            <p class="text-3xl font-bold text-emerald-600">
+              {{ total_applications }}
+            </p>
+          </div>
+          <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+            <span class="text-emerald-600 font-semibold text-lg">A</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-slate-600 mb-1">Total Jobs</p>
+            <p class="text-3xl font-bold text-slate-700">
+              {{ jobs|length }}
+            </p>
+          </div>
+          <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
+            <span class="text-slate-600 font-semibold text-lg">Σ</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Jobs Grid -->
+    {% if jobs_loading %}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for _ in "123456" %}
+          <div class="h-64 backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl animate-pulse"></div>
+        {% endfor %}
+      </div>
+    {% elif jobs|length == 0 %}
+      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl text-center py-20 shadow-sm">
+        <div class="w-16 h-16 rounded-2xl bg-slate-50 text-slate-300 flex items-center justify-center mx-auto mb-4 text-3xl">
+          J
+        </div>
+        <h3 class="text-xl font-semibold text-slate-700 mb-2">No jobs posted yet</h3>
+        <p class="text-slate-500 mb-6">Create your first job posting to start hiring</p>
+        <a href="{% url 'company_create_job' %}"
+           class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+          <span class="mr-2 text-base leading-none">＋</span>
+          Post Your First Job
+        </a>
+      </div>
+    {% else %}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for job in jobs %}
+          <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all group">
+            <div class="flex items-start justify-between mb-4">
+              <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold
+                           {% if job.status == 'active' %}bg-emerald-100 text-emerald-700 border-emerald-200
+                           {% elif job.status == 'paused' %}bg-amber-100 text-amber-700 border-amber-200
+                           {% elif job.status == 'closed' %}bg-slate-100 text-slate-700 border-slate-200
+                           {% else %}bg-blue-100 text-blue-700 border-blue-200{% endif %}">
+                {{ job.status|default:"draft" }}
+              </span>
+              <div class="flex gap-1">
+                {% if job.status == 'active' %}
+                  <form method="post" action="{% url 'job_change_status' job.id 'paused' %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white/80 text-amber-600 hover:bg-slate-50 text-xs font-semibold">
+                      ||
+                    </button>
+                  </form>
+                {% elif job.status == 'paused' %}
+                  <form method="post" action="{% url 'job_change_status' job.id 'active' %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white/80 text-emerald-600 hover:bg-slate-50 text-xs font-semibold">
+                      ▶
+                    </button>
+                  </form>
+                {% endif %}
+                {% if job.status != 'closed' %}
+                  <form method="post" action="{% url 'job_change_status' job.id 'closed' %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white/80 text-slate-600 hover:bg-slate-50 text-xs font-semibold">
+                      ⌧
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </div>
+
+            <h3 class="text-xl font-bold text-slate-800 mb-2 group-hover:text-indigo-600 transition-colors">
+              {{ job.title }}
+            </h3>
+            <p class="text-sm text-slate-600 mb-4">
+              {{ job.department }}
+            </p>
+
+            <div class="space-y-2 mb-4 text-sm text-slate-600">
+              <div class="flex items-center gap-2">
+                <span class="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-slate-100 text-[10px] font-semibold">L</span>
+                {{ job.location|default:"Remote" }}
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-slate-100 text-[10px] font-semibold">$</span>
+                {{ job.salary_range_min }}k – {{ job.salary_range_max }}k
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-slate-100 text-[10px] font-semibold">👥</span>
+                {{ job.application_count|default:0 }} applications
+              </div>
+            </div>
+
+            <!-- <div class="flex gap-2 pt-4 border-t border-slate-200">
+              <a href="{% url 'job_edit' job.id %}"
+                 class="inline-flex items-center justify-center flex-1 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                Edit
+              </a> -->
+<!-- 
+              <a href="{% url 'company_job_applicants' job.id %}"
+   class="inline-flex items-center justify-center flex-1 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+  View Applicants
+</a>
+
+              <a href="{% url 'job_detail' job.id %}"
+                 class="inline-flex items-center justify-center flex-1 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700">
+                View Details
+              </a>
+            </div>
+          </div> -->
+
+
+<div class="flex gap-2 pt-4 border-t border-slate-200">
+  <!-- View Applicants Button (shows candidate discovery) -->
+  <a href="{% url 'recruiter_job_detail' job.id %}"
+     class="inline-flex items-center justify-center flex-1 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+    View Applicants
+  </a>
+
+  <!-- View Details Button (shows job description only) -->
+  <a href="{% url 'recruiter_job_info' job.id %}"
+     class="inline-flex items-center justify-center flex-1 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700">
+    View Details
+  </a>
+</div>
+
+
+
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+
+
