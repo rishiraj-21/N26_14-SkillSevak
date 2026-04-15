@@ -2,9 +2,8 @@
 ANN Model Definition
 
 Neural network for predicting match scores.
-Phase 5 implementation per PROJECT_PLAN.md.
-
-Architecture (per PRD.md):
+phase 5
+Architecture :
 - Input: 5 features (semantic, skill, experience, education, profile)
 - Hidden: 64 → 32 → 16 neurons with ReLU
 - Output: Match probability (0-1, scaled to 0-100)
@@ -38,21 +37,25 @@ if TORCH_AVAILABLE:
         def __init__(self, input_size: int = 5):
             super().__init__()
 
+            # Wider first layer + lighter dropout for better range coverage.
+            # MSELoss in training (see train.py) + lower dropout fixes the
+            # score-compression bug (model was predicting 35-70 instead of 0-100).
             self.network = nn.Sequential(
-                nn.Linear(input_size, 64),
+                nn.Linear(input_size, 128),
                 nn.ReLU(),
-                nn.BatchNorm1d(64),
-                nn.Dropout(0.3),
+                nn.LayerNorm(128),
+                nn.Dropout(0.15),
+
+                nn.Linear(128, 64),
+                nn.ReLU(),
+                nn.LayerNorm(64),
+                nn.Dropout(0.10),
 
                 nn.Linear(64, 32),
                 nn.ReLU(),
-                nn.BatchNorm1d(32),
-                nn.Dropout(0.2),
+                nn.LayerNorm(32),
 
-                nn.Linear(32, 16),
-                nn.ReLU(),
-
-                nn.Linear(16, 1),
+                nn.Linear(32, 1),
                 nn.Sigmoid()
             )
 

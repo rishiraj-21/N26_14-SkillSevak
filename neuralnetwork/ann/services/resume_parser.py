@@ -1,8 +1,7 @@
 """
-Resume Parser Service
+Resume Parser 
 
 Extracts text from PDF and DOCX resume files.
-Phase 2 implementation per PROJECT_PLAN.md.
 
 Features:
 - PDF text extraction via pdfplumber
@@ -451,9 +450,9 @@ class ResumeParser:
             word_count = self.get_word_count(skills_text)
             if word_count >= 20:
                 score += 25
-            elif word_count >= 10:
+            elif word_count >= 6:
                 score += 18
-            elif word_count >= 5:
+            elif word_count >= 3:
                 score += 12
             else:
                 score += 6

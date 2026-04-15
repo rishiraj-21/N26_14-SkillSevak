@@ -43,9 +43,31 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+    # Authentication (Google OAuth)
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
     # SkillSevak App
     'ann',
 ]
+
+# Background Tasks (Phase 6) - add if Celery packages are installed
+try:
+    import django_celery_results
+    INSTALLED_APPS.append('django_celery_results')
+except ImportError:
+    pass
+
+try:
+    import django_celery_beat
+    INSTALLED_APPS.append('django_celery_beat')
+except ImportError:
+    pass
+
+# Django Sites Framework (required by allauth)
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -55,6 +77,15 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
+]
+
+# =============================================================================
+# AUTHENTICATION BACKENDS
+# =============================================================================
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 ROOT_URLCONF = 'neuralnetwork.urls'
@@ -79,17 +110,33 @@ WSGI_APPLICATION = 'neuralnetwork.wsgi.application'
 # =============================================================================
 # DATABASE CONFIGURATION
 # =============================================================================
-# SQLite for development, PostgreSQL for production (per PRD.md)
+# PostgreSQL for both development and production (better for embeddings)
+# Install PostgreSQL and create database: createdb skillsevak
+
 DATABASE_URL = config('DATABASE_URL', default='')
 
 if DATABASE_URL:
-    # Production: PostgreSQL
+    # Production: Use DATABASE_URL
     import dj_database_url
     DATABASES = {
         'default': dj_database_url.parse(DATABASE_URL)
     }
 else:
-    # Development: SQLite
+    # Development: PostgreSQL (recommended for vector operations)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DB_NAME', default='skillsevak'),
+            'USER': config('DB_USER', default='postgres'),
+            'PASSWORD': config('DB_PASSWORD', default='postgres'),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5432'),
+        }
+    }
+
+# Fallback to SQLite if PostgreSQL is not available (for quick testing)
+# Set USE_SQLITE=True in .env to use SQLite
+if config('USE_SQLITE', default=False, cast=bool):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -142,11 +189,34 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CELERY CONFIGURATION (Phase 6 - Background Tasks)
 # =============================================================================
 CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+
+# Use django-celery-results to store task results in database
+# This allows tracking task status without Redis
+CELERY_RESULT_BACKEND = 'django-db'
+
+# Content settings
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+
+# Task result expiration (7 days)
+CELERY_RESULT_EXPIRES = 60 * 60 * 24 * 7
+
+# Track task state changes
+CELERY_TASK_TRACK_STARTED = True
+
+# Celery Beat scheduler (stores schedule in database) - only if installed
+try:
+    import django_celery_beat
+    CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+except ImportError:
+    pass
+
+# Enable async resume processing (set False to use sync processing)
+# Useful for development without Redis
+# Requires: pip install celery redis django-celery-results django-celery-beat
+USE_ASYNC_PROCESSING = config('USE_ASYNC_PROCESSING', default=False, cast=bool)
 
 # =============================================================================
 # CACHING (Redis for match score caching per PRD.md)
@@ -181,11 +251,21 @@ EMBEDDING_DIMENSION = 384
 # spaCy model for NLP
 SPACY_MODEL = 'en_core_web_sm'
 
-# ANN Model weights path
+# =============================================================================
+# ANN MODEL CONFIGURATION (Phase 5)
+# =============================================================================
+# Path to trained model weights
 ANN_MODEL_PATH = os.path.join(BASE_DIR, 'ann', 'ml', 'weights', 'match_predictor.pth')
 
+# Enable ANN-based scoring (uses trained model if available)
+# Set to False to always use weighted average formula
+# NOTE: ANN disabled for now - weighted average gives more accurate scores
+# until ANN is retrained with real recruiter decision data
+USE_ANN_MODEL = config('USE_ANN_MODEL', default=False, cast=bool)
+
 # Match score weights (MVP - fixed weights per PRD.md)
-# These will be learned by ANN in Phase 5
+# Used as fallback when ANN model is not available
+# Phase 5: ANN learns optimal weights automatically
 MATCH_WEIGHTS = {
     'semantic': 0.25,
     'skills': 0.35,
@@ -243,3 +323,48 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+# =============================================================================
+# DJANGO-ALLAUTH CONFIGURATION (Google OAuth)
+# =============================================================================
+# Login/Logout URLs
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'candidate'
+LOGOUT_REDIRECT_URL = 'index'
+
+# Allauth settings
+ACCOUNT_LOGIN_ON_GET = True
+ACCOUNT_LOGOUT_ON_GET = True
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_UNIQUE_EMAIL = True
+
+# Social account settings
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
+
+# Google OAuth Provider Configuration
+# Set these in your .env file:
+# GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+# GOOGLE_CLIENT_SECRET=your-client-secret
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': config('GOOGLE_CLIENT_ID', default=''),
+            'secret': config('GOOGLE_CLIENT_SECRET', default=''),
+            'key': '',
+        },
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}

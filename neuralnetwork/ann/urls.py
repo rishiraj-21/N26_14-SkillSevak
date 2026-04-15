@@ -25,6 +25,9 @@ urlpatterns = [
     path('recruiter/jobs/<int:job_id>/', views.recruiter_job_detail, name='recruiter_job_detail'),
     path('recruiter/jobs/<int:job_id>/info/', views.recruiter_job_info, name='recruiter_job_info'),
     path('recruiter/pipeline/', views.recruiter_pipeline, name='pipeline'),
+    path('recruiter/pipeline/<int:application_id>/update-status/',
+         views.pipeline_update_status,
+         name='pipeline_update_status'),
     path('recruiter/schedule/', views.recruiter_schedule, name='schedule'),
     path('recruiter/analytics/', views.recruiter_analytics, name='analytics'),
     path('recruiter/templates/', views.recruiter_email_templates, name='email_templates'),
@@ -41,6 +44,9 @@ urlpatterns = [
 
     # Interview scheduling
     path('recruiter/interviews/create/', views.interview_create, name='interview_create'),
+    path('recruiter/interviews/<int:interview_id>/update-status/',
+         views.interview_update_status,
+         name='interview_update_status'),
     
     # Email templates
     path('recruiter/templates/create/', views.email_template_create, name='email_template_create'),
@@ -52,4 +58,8 @@ urlpatterns = [
     # Phase 2: Resume Parsing API
     path('api/resume/parsed/', views.get_parsed_resume, name='get_parsed_resume'),
     path('api/resume/reparse/', views.reparse_resume, name='reparse_resume'),
+
+    # Phase 6: Async Task Status API
+    path('api/task/<str:task_id>/status/', views.get_task_status, name='get_task_status'),
+    path('api/resume/processing-status/', views.get_processing_status, name='get_processing_status'),
 ]

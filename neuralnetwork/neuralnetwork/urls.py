@@ -25,8 +25,8 @@ from django.http import HttpResponse
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('', home),
-    # path('ann/', include('ann.urls')),
+    # Google OAuth / Social Auth
+    path('accounts/', include('allauth.urls')),
+    # Main app
     path('', include('ann.urls'))
-
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

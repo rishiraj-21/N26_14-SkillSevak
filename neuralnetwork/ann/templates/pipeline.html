@@ -1,119 +1,194 @@
 {% extends "recruiter_layout.html" %}
 
-{% block title %}Pipeline · RecruiterAI{% endblock %}
+{% block title %}Pipeline · SkillSevak{% endblock %}
 
 {% block content %}
-  <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-2">
-      <div>
-        <h1 class="text-3xl font-bold text-slate-800">Hiring Pipeline</h1>
-        <p class="text-slate-500 mt-1">Drag candidates between stages</p>
-      </div>
-      <div class="w-64 max-w-full">
-        <form method="get">
-          <label class="block text-xs font-medium text-slate-500 mb-1">
-            Filter by job
-          </label>
-          <select name="job_id"
-                  class="w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="">All Jobs</option>
-            {% for job in jobs %}
-              <option value="{{ job.id }}" {% if selected_job_id == job.id|stringformat:'s' %}selected{% endif %}>
-                {{ job.title }}
-              </option>
-            {% endfor %}
-          </select>
-        </form>
-      </div>
+<div class="space-y-5">
+
+  <!-- Header + stats bar -->
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-bold text-slate-800">Hiring Pipeline</h1>
+      <p class="text-slate-500 mt-1">Drag candidates between stages to update their status</p>
     </div>
-
-    <!-- Kanban -->
-    <div class="flex gap-4 overflow-x-auto pb-4">
-      {% for column in stages %}
-        {% with stage_id=column.id %}
-          {% with stage_apps=applications_by_stage.stage_id %}
-            <div class="flex-shrink-0 w-80">
-              <div class="{{ column.color }} border-2 rounded-xl p-4 mb-3">
-                <h3 class="font-semibold text-slate-800 flex items-center justify-between">
-                  {{ column.label }}
-                  <span class="inline-flex items-center rounded-full bg-white/80 border border-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-700">
-                    {{ stage_apps|length }}
-                  </span>
-                </h3>
-              </div>
-
-              <div class="space-y-3 min-h-[500px] p-2 rounded-xl bg-slate-50/60">
-                {% for app in stage_apps %}
-                  {% with candidate=app.candidate job=app.job %}
-                    {% if candidate %}
-                      <div class="backdrop-blur-xl bg-white border border-slate-200/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-all">
-                        <div class="flex items-start gap-3 mb-3">
-                          {% if candidate.photo_url %}
-                            <img src="{{ candidate.photo_url }}"
-                                 alt="{{ candidate.name }}"
-                                 class="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100" />
-                          {% else %}
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-slate-100 flex items-center justify-center">
-                              <span class="w-5 h-5 text-indigo-600 text-xs font-semibold">C</span>
-                            </div>
-                          {% endif %}
-                          <div class="flex-1 min-w-0">
-                            <h4 class="font-semibold text-slate-800 truncate">
-                              {{ candidate.name }}
-                            </h4>
-                            <p class="text-xs text-slate-500 truncate">
-                              {{ candidate.role }}
-                            </p>
-                          </div>
-                        </div>
-
-                        {% if job %}
-                          <div class="flex items-center gap-2 text-xs text-slate-600 mb-2">
-                            <span class="inline-flex h-4 w-4 items-center justify-center rounded-md bg-slate-100 text-[9px] font-semibold">J</span>
-                            <span class="truncate">{{ job.title }}</span>
-                          </div>
-                        {% endif %}
-
-                        {% if app.rating %}
-                          <div class="flex gap-1 mb-2">
-                            {% for i in "12345" %}
-                              {% with idx=forloop.counter %}
-                                <div class="w-2 h-2 rounded-full {% if idx <= app.rating %}bg-amber-400{% else %}bg-slate-200{% endif %}"></div>
-                              {% endwith %}
-                            {% endfor %}
-                          </div>
-                        {% endif %}
-
-                        {% if candidate.skill_match_percentage %}
-                          <div class="flex gap-2">
-                            <div class="flex-1">
-                              <div class="text-xs text-slate-500 mb-1">Skill Match</div>
-                              <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full bg-indigo-500 rounded-full"
-                                     style="width: {{ candidate.skill_match_percentage }}%;"></div>
-                              </div>
-                            </div>
-                            <div class="text-xs font-semibold text-indigo-600 mt-auto">
-                              {{ candidate.skill_match_percentage }}%
-                            </div>
-                          </div>
-                        {% endif %}
-                      </div>
-                    {% endif %}
-                  {% endwith %}
-                {% empty %}
-                  <div class="h-32 flex items-center justify-center text-xs text-slate-400">
-                    No candidates in this stage
-                  </div>
-                {% endfor %}
-              </div>
-            </div>
-          {% endwith %}
-        {% endwith %}
-      {% endfor %}
+    <div class="flex items-center gap-3">
+      <div class="rounded-xl border border-slate-200 bg-white/80 px-4 py-2 text-center shadow-sm">
+        <div class="text-2xl font-bold text-slate-800">{{ total_applications }}</div>
+        <div class="text-xs text-slate-500">Total</div>
+      </div>
+      <div class="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-center shadow-sm">
+        <div class="text-2xl font-bold text-indigo-700">{{ active_count }}</div>
+        <div class="text-xs text-indigo-500">Active</div>
+      </div>
+      <div class="rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-center shadow-sm">
+        <div class="text-2xl font-bold text-green-700">{{ hired_count }}</div>
+        <div class="text-xs text-green-500">Hired</div>
+      </div>
     </div>
   </div>
+
+  <!-- Job filter -->
+  <form method="get" class="flex items-center gap-3">
+    <label class="text-sm font-medium text-slate-600 whitespace-nowrap">Filter by job:</label>
+    <select name="job_id"
+            onchange="this.form.submit()"
+            class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-72 max-w-full">
+      <option value="">All Jobs</option>
+      {% for job in jobs %}
+        <option value="{{ job.id }}" {% if selected_job_id == job.id|stringformat:"s" %}selected{% endif %}>
+          {{ job.title }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <!-- Kanban board -->
+  <div class="flex gap-4 overflow-x-auto pb-6">
+
+    {% for stage in stages %}
+    <div class="flex-shrink-0 w-72" data-column>
+
+      <!-- Column header -->
+      <div class="{{ stage.hdr_bg }} {{ stage.hdr_border }} border-2 rounded-xl px-4 py-3 mb-3 flex items-center justify-between">
+        <span class="font-semibold text-slate-800 text-sm">{{ stage.label }}</span>
+        <span class="{{ stage.badge_bg }} {{ stage.badge_text }} rounded-full px-2 py-0.5 text-xs font-bold" data-count>{{ stage.count }}</span>
+      </div>
+
+      <!-- Drop zone -->
+      <div class="space-y-3 min-h-[480px] p-2 rounded-xl bg-slate-50/60"
+           data-stage-id="{{ stage.id }}">
+
+        {% for card in stage.apps %}
+        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing"
+             data-app-id="{{ card.app_id }}">
+
+          <!-- Avatar + name -->
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-100 to-slate-200 flex items-center justify-center flex-shrink-0">
+              <span class="text-xs font-bold text-indigo-700">{{ card.initials }}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h4 class="font-semibold text-slate-800 text-sm truncate">{{ card.candidate_name }}</h4>
+              <p class="text-xs text-slate-500 truncate">{{ card.job_title }}</p>
+            </div>
+
+            <!-- AI match score badge -->
+            {% if card.match_score is not None %}
+              {% if card.match_score >= 80 %}
+                <span class="flex-shrink-0 rounded-lg bg-green-100 text-green-700 px-2 py-0.5 text-xs font-bold">{{ card.match_score }}%</span>
+              {% elif card.match_score >= 60 %}
+                <span class="flex-shrink-0 rounded-lg bg-blue-100 text-blue-700 px-2 py-0.5 text-xs font-bold">{{ card.match_score }}%</span>
+              {% elif card.match_score >= 40 %}
+                <span class="flex-shrink-0 rounded-lg bg-amber-100 text-amber-700 px-2 py-0.5 text-xs font-bold">{{ card.match_score }}%</span>
+              {% else %}
+                <span class="flex-shrink-0 rounded-lg bg-red-100 text-red-600 px-2 py-0.5 text-xs font-bold">{{ card.match_score }}%</span>
+              {% endif %}
+            {% endif %}
+          </div>
+
+          <!-- Applied date -->
+          <p class="text-xs text-slate-400 mb-2">Applied {{ card.applied_at|date:"M d, Y" }}</p>
+
+          <!-- Top matched skills -->
+          {% if card.top_skills %}
+          <div class="flex flex-wrap gap-1 mb-3">
+            {% for skill in card.top_skills %}
+            <span class="rounded-md bg-indigo-50 text-indigo-600 px-2 py-0.5 text-xs">{{ skill }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- Actions -->
+          <div class="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100">
+            {% if card.resume_url %}
+            <a href="{{ card.resume_url }}"
+               target="_blank"
+               class="flex-1 text-center rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 px-2 py-1 text-xs font-medium transition-colors"
+               onclick="event.stopPropagation()">
+              View Resume
+            </a>
+            {% endif %}
+            <button onclick="moveToRejected(event, {{ card.app_id }})"
+                    class="rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-700 px-2 py-1 text-xs font-medium transition-colors">
+              Reject
+            </button>
+          </div>
+        </div>
+        {% empty %}
+        <div class="h-32 flex items-center justify-center text-xs text-slate-400">
+          No candidates in this stage
+        </div>
+        {% endfor %}
+
+      </div><!-- /drop zone -->
+    </div><!-- /column -->
+    {% endfor %}
+
+  </div><!-- /kanban board -->
+</div>
+
+<!-- SortableJS -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+  const CSRF = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+
+  function updateBadge(dropZone, delta) {
+    const col = dropZone.closest('[data-column]');
+    if (!col) return;
+    const badge = col.querySelector('[data-count]');
+    if (badge) badge.textContent = Math.max(0, parseInt(badge.textContent, 10) + delta);
+  }
+
+  function persistStatus(appId, newStage, onFail) {
+    fetch('/recruiter/pipeline/' + appId + '/update-status/', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+      body: JSON.stringify({status: newStage}),
+    }).then(function(r) {
+      if (!r.ok) onFail();
+    }).catch(onFail);
+  }
+
+  document.querySelectorAll('[data-stage-id]').forEach(function(col) {
+    Sortable.create(col, {
+      group: 'pipeline',
+      animation: 150,
+      ghostClass: 'opacity-40',
+      onEnd: function(evt) {
+        const appId    = evt.item.dataset.appId;
+        const newStage = evt.to.dataset.stageId;
+        const oldStage = evt.from.dataset.stageId;
+        if (newStage === oldStage) return;
+
+        updateBadge(evt.from, -1);
+        updateBadge(evt.to,   +1);
+
+        persistStatus(appId, newStage, function() {
+          // Revert on failure
+          evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex] || null);
+          updateBadge(evt.from, +1);
+          updateBadge(evt.to,   -1);
+        });
+      }
+    });
+  });
+
+  function moveToRejected(event, appId) {
+    event.stopPropagation();
+    const card = event.target.closest('[data-app-id]');
+    const fromZone = card.closest('[data-stage-id]');
+    const toZone   = document.querySelector('[data-stage-id="rejected"]');
+    if (!toZone || fromZone === toZone) return;
+
+    toZone.prepend(card);
+    updateBadge(fromZone, -1);
+    updateBadge(toZone,   +1);
+
+    persistStatus(appId, 'rejected', function() {
+      fromZone.prepend(card);
+      updateBadge(fromZone, +1);
+      updateBadge(toZone,   -1);
+    });
+  }
+</script>
 {% endblock %}
-
-

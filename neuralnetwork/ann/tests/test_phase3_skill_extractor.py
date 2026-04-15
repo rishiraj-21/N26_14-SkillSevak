@@ -1,5 +1,4 @@
 """
-Tests for Phase 3: Dynamic Skill Extraction
 
 Tests the DynamicSkillExtractor service per PROJECT_PLAN.md.
 

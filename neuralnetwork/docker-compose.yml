@@ -1,0 +1,89 @@
+# SkillSevak - Docker Compose
+# One command to start everything: docker-compose up
+#
+# Services:
+#   - web: Django application
+#   - celery: Background worker
+#   - redis: Message broker
+#
+# Usage:
+#   Development: docker-compose up
+#   Production:  docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  # Redis - Message broker for Celery
+  redis:
+    image: redis:7-alpine
+    container_name: skillsevak-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Django Web Application
+  web:
+    build: .
+    container_name: skillsevak-web
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - media_data:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - USE_SQLITE=True
+      - USE_ASYNC_PROCESSING=True
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - REDIS_URL=redis://redis:6379/1
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Celery Worker - Background task processing
+  celery:
+    build: .
+    container_name: skillsevak-celery
+    command: celery -A neuralnetwork worker -l info
+    volumes:
+      - .:/app
+      - media_data:/app/media
+    environment:
+      - DEBUG=True
+      - USE_SQLITE=True
+      - USE_ASYNC_PROCESSING=True
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - REDIS_URL=redis://redis:6379/1
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Celery Beat - Scheduled tasks (weekly retraining, etc.)
+  celery-beat:
+    build: .
+    container_name: skillsevak-celery-beat
+    command: celery -A neuralnetwork beat -l info
+    volumes:
+      - .:/app
+    environment:
+      - DEBUG=True
+      - USE_SQLITE=True
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  media_data:

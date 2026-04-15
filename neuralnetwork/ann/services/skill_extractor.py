@@ -71,6 +71,37 @@ class DynamicSkillExtractor:
         'using', 'use', 'used', 'utilize', 'utilized',
         'various', 'multiple', 'several', 'many', 'new',
         'based', 'related', 'including', 'within', 'across',
+        # Job titles - NOT skills
+        'intern', 'interns', 'internship', 'internships',
+        'manager', 'managers', 'management', 'managing',
+        'director', 'directors', 'executive', 'executives',
+        'engineer', 'engineers', 'engineering',
+        'developer', 'developers', 'development',
+        'analyst', 'analysts', 'analysis',
+        'designer', 'designers', 'design',
+        'consultant', 'consultants', 'consulting',
+        'specialist', 'specialists', 'coordinator', 'coordinators',
+        'associate', 'associates', 'assistant', 'assistants',
+        'senior', 'junior', 'lead', 'principal', 'staff',
+        'head', 'chief', 'officer', 'president', 'vice',
+        # Common non-skill words
+        'candidate', 'candidates', 'applicant', 'applicants',
+        'employer', 'employers', 'employee', 'employees',
+        'client', 'clients', 'customer', 'customers',
+        'business', 'businesses', 'industry', 'industries',
+        'market', 'markets', 'sector', 'sectors',
+        'service', 'services', 'product', 'products',
+        'solution', 'solutions', 'system', 'systems',
+        'process', 'processes', 'procedure', 'procedures',
+        'requirement', 'requirements', 'qualification', 'qualifications',
+        'ability', 'abilities', 'skill', 'skills',
+        'knowledge', 'understanding', 'expertise',
+        'degree', 'degrees', 'bachelor', 'master', 'phd', 'diploma',
+        'university', 'college', 'school', 'institute', 'education',
+        'certified', 'certification', 'certificate', 'license',
+        'salary', 'compensation', 'benefits', 'bonus',
+        'remote', 'onsite', 'hybrid', 'location', 'office',
+        'full-time', 'part-time', 'contract', 'temporary', 'permanent',
     }
 
     # Soft skill indicators (for categorization, NOT extraction)
@@ -238,7 +269,9 @@ class DynamicSkillExtractor:
         skills = []
 
         # Entity types likely to be skills/tools
-        skill_entity_types = {'ORG', 'PRODUCT', 'WORK_OF_ART', 'LAW', 'EVENT'}
+        # NOTE: Removed 'ORG' - it captures company names like CISCO, Google, Microsoft
+        # which are NOT skills
+        skill_entity_types = {'PRODUCT', 'WORK_OF_ART', 'LAW'}
 
         for ent in doc.ents:
             if ent.label_ not in skill_entity_types:

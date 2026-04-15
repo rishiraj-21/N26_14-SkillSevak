@@ -1,5 +1,4 @@
 """
-Phase 2 Tests - Resume Parser Service
 
 Tests for:
 - Text extraction from PDF/DOCX

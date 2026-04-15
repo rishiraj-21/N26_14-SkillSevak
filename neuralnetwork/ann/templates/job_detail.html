@@ -22,7 +22,7 @@
 </head>
 <body class="bg-gray-50">
     {% csrf_token %}
-    
+
     <!-- Header -->
     <div class="bg-white shadow-sm border-b">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -33,13 +33,13 @@
                     </svg>
                     Back to Dashboard
                 </a>
-                
+
                 <div class="flex items-center space-x-4">
                     {% if user.is_authenticated %}
                         <span class="text-sm text-gray-600">{{ user.email|default:"Guest User" }}</span>
-                        <a href="{% url 'index' %}" class="text-gray-600 hover:text-gray-900">Logout</a>
+                        <a href="{% url 'logout' %}" class="text-gray-600 hover:text-gray-900">Logout</a>
                     {% else %}
-                        <a href="{% url 'index' %}" class="text-gray-600 hover:text-gray-900">Login</a>
+                        <a href="{% url 'login' %}" class="text-gray-600 hover:text-gray-900">Login</a>
                     {% endif %}
                 </div>
             </div>
@@ -49,7 +49,7 @@
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
+
             <!-- Job Overview Card -->
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -59,12 +59,6 @@
                             <p class="text-xl text-gray-600">{{ job.company }}</p>
                         </div>
                         <div class="flex space-x-3">
-                            <button onclick="openOptimizeModal({{ job.id }})" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center">
-                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                                </svg>
-                                Optimize Resume
-                            </button>
                             <button onclick="applyJob({{ job.id }})" class="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-2 rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-200 flex items-center" id="applyBtn{{ job.id }}">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
@@ -78,16 +72,6 @@
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <div class="flex items-center text-gray-600">
                             <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                            </svg>
-                            <div>
-                                <p class="text-sm text-gray-500">Company</p>
-                                <p class="font-medium">{{ job.company }}</p>
-                            </div>
-                        </div>
-                        
-                        <div class="flex items-center text-gray-600">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
@@ -96,7 +80,7 @@
                                 <p class="font-medium">{{ job.location }}</p>
                             </div>
                         </div>
-                        
+
                         <div class="flex items-center text-gray-600">
                             <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
@@ -106,14 +90,32 @@
                                 <p class="font-medium">${{ job.salary_min|floatformat:0 }} - ${{ job.salary_max|floatformat:0 }}</p>
                             </div>
                         </div>
-                        
+
                         <div class="flex items-center text-gray-600">
                             <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             <div>
                                 <p class="text-sm text-gray-500">Job Type</p>
-                                <p class="font-medium">{{ job.job_type }}</p>
+                                <p class="font-medium">{{ job.job_type|title }}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center text-gray-600">
+                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm text-gray-500">Experience</p>
+                                <p class="font-medium">
+                                    {% if job.experience_min and job.experience_max and job.experience_max < 99 %}
+                                        {{ job.experience_min }}-{{ job.experience_max }} yrs
+                                    {% elif job.experience_min %}
+                                        {{ job.experience_min }}+ years
+                                    {% else %}
+                                        Any level
+                                    {% endif %}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -126,8 +128,29 @@
                             </svg>
                             Job Description
                         </h3>
-                        <p class="text-gray-700 leading-relaxed">{{ job.description }}</p>
+                        <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ job.description }}</p>
                     </div>
+
+                    <!-- Requirements -->
+                    {% if job.requirements %}
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Requirements
+                        </h3>
+                        {% if requirements_list %}
+                            <ul class="list-disc list-inside text-gray-700 space-y-1">
+                                {% for req in requirements_list %}
+                                    <li>{{ req }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ job.requirements }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
 
                     <!-- Skills Required -->
                     <div class="mb-6">
@@ -137,14 +160,19 @@
                             </svg>
                             Skills Required
                         </h3>
+                        {% if skills_required %}
                         <div class="flex flex-wrap gap-2">
                             {% for skill in skills_required %}
                                 <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">{{ skill }}</span>
                             {% endfor %}
                         </div>
+                        {% else %}
+                            <p class="text-gray-500 italic">No specific skills listed</p>
+                        {% endif %}
                     </div>
 
                     <!-- Perks & Benefits -->
+                    {% if job.benefits %}
                     <div>
                         <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
                             <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,40 +180,41 @@
                             </svg>
                             Perks & Benefits
                         </h3>
-                        {% if job.benefits %}
-                            <p class="text-gray-700">{{ job.benefits }}</p>
-                        {% else %}
-                            <p class="text-gray-500 italic">Benefits information not available</p>
-                        {% endif %}
+                        <p class="text-gray-700 whitespace-pre-line">{{ job.benefits }}</p>
                     </div>
+                    {% endif %}
                 </div>
             </div>
 
             <!-- AI Match Score Panel -->
             <div class="lg:col-span-1">
                 <div class="bg-white rounded-xl shadow-sm p-6 sticky top-8">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-6">AI Match Score</h3>
-                    
+                    <h3 class="text-lg font-semibold text-gray-900 mb-6">AI Match Analysis</h3>
+
                     <!-- Overall Match -->
                     <div class="text-center mb-8">
                         <div class="relative w-32 h-32 mx-auto mb-4">
                             <svg class="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
                                 <circle cx="60" cy="60" r="50" stroke="#e5e7eb" stroke-width="8" fill="none"></circle>
-                                <circle cx="60" cy="60" r="50" stroke="url(#gradient)" stroke-width="8" fill="none" 
-                                        stroke-dasharray="{{ match_score|floatformat:0|add:'0' }} 100" 
+                                <circle cx="60" cy="60" r="50"
+                                        stroke="{% if match_score >= 70 %}#22c55e{% elif match_score >= 50 %}#eab308{% else %}#94a3b8{% endif %}"
+                                        stroke-width="8" fill="none"
+                                        stroke-dasharray="{{ match_score|floatformat:0 }} 100"
                                         stroke-linecap="round"></circle>
                             </svg>
                             <div class="absolute inset-0 flex items-center justify-center">
-                                <span class="text-2xl font-bold text-gray-900">{{ match_score|floatformat:0 }}%</span>
+                                <span class="text-2xl font-bold {% if match_score >= 70 %}text-green-600{% elif match_score >= 50 %}text-yellow-600{% else %}text-gray-600{% endif %}">{{ match_score|floatformat:0 }}%</span>
                             </div>
                         </div>
                         <p class="text-lg font-semibold text-gray-900">Overall Match</p>
                         {% if match_score >= 80 %}
-                            <p class="text-sm text-green-600 mt-2">Excellent match for you!</p>
+                            <p class="text-sm text-green-600 mt-2">Excellent match!</p>
                         {% elif match_score >= 60 %}
-                            <p class="text-sm text-blue-600 mt-2">Good match for you</p>
-                        {% else %}
+                            <p class="text-sm text-blue-600 mt-2">Good potential</p>
+                        {% elif match_score >= 40 %}
                             <p class="text-sm text-yellow-600 mt-2">Moderate match</p>
+                        {% else %}
+                            <p class="text-sm text-gray-500 mt-2">Skills gap detected</p>
                         {% endif %}
                     </div>
 
@@ -194,649 +223,82 @@
                         <div>
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm font-medium text-gray-700">Skills Match</span>
-                                <span class="text-sm font-bold text-blue-600">{% widthratio match_score 100 85 %}%</span>
+                                <span class="text-sm font-bold {% if skill_match >= 70 %}text-green-600{% elif skill_match >= 50 %}text-yellow-600{% else %}text-red-500{% endif %}">{{ skill_match|floatformat:0 }}%</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-blue-500 h-2 rounded-full" style="width: {% widthratio match_score 100 85 %}%"></div>
+                                <div class="{% if skill_match >= 70 %}bg-green-500{% elif skill_match >= 50 %}bg-yellow-500{% else %}bg-red-400{% endif %} h-2 rounded-full" style="width: {{ skill_match|floatformat:0 }}%"></div>
                             </div>
                         </div>
-                        
+
                         <div>
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm font-medium text-gray-700">Experience Match</span>
-                                <span class="text-sm font-bold text-purple-600">{% widthratio match_score 100 70 %}%</span>
+                                <span class="text-sm font-bold {% if experience_match >= 70 %}text-green-600{% elif experience_match >= 50 %}text-yellow-600{% else %}text-red-500{% endif %}">{{ experience_match|floatformat:0 }}%</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-purple-500 h-2 rounded-full" style="width: {% widthratio match_score 100 70 %}%"></div>
+                                <div class="{% if experience_match >= 70 %}bg-green-500{% elif experience_match >= 50 %}bg-yellow-500{% else %}bg-red-400{% endif %} h-2 rounded-full" style="width: {{ experience_match|floatformat:0 }}%"></div>
                             </div>
                         </div>
-                        
+
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-medium text-gray-700">Culture Match</span>
-                                <span class="text-sm font-bold text-yellow-600">{% widthratio match_score 100 65 %}%</span>
+                                <span class="text-sm font-medium text-gray-700">Semantic Fit</span>
+                                <span class="text-sm font-bold {% if semantic_match >= 70 %}text-green-600{% elif semantic_match >= 50 %}text-yellow-600{% else %}text-red-500{% endif %}">{{ semantic_match|floatformat:0 }}%</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-yellow-500 h-2 rounded-full" style="width: {% widthratio match_score 100 65 %}%"></div>
+                                <div class="{% if semantic_match >= 70 %}bg-green-500{% elif semantic_match >= 50 %}bg-yellow-500{% else %}bg-red-400{% endif %} h-2 rounded-full" style="width: {{ semantic_match|floatformat:0 }}%"></div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Optimize Modal -->
-    <div id="optimizeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-semibold text-gray-900">Optimize Your Resume</h3>
-                        <button onclick="closeOptimizeModal()" class="text-gray-400 hover:text-gray-600">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <!-- Job Info -->
-                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                        <h4 class="font-semibold text-gray-900 mb-2">Job Info</h4>
-                        <p class="text-gray-700">{{ job.title }} at {{ job.company }}</p>
-                        <p class="text-sm text-gray-600">{{ job.location }} • {{ job.job_type }}</p>
-                    </div>
-
-                    <!-- Optimization Suggestions -->
-                    <div class="space-y-4 mb-6">
-                        <div>
-                            <h4 class="font-semibold text-gray-900 mb-2">Key Skills to Highlight</h4>
-                            <div class="flex flex-wrap gap-2">
-                                {% for skill in skills_required %}
-                                    <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">{{ skill }}</span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <h4 class="font-semibold text-gray-900 mb-2">Optimization Suggestions</h4>
-                            <ul class="space-y-2 text-gray-700">
-                                <li class="flex items-start">
-                                    <span class="text-green-500 mr-2">•</span>
-                                    Emphasize your experience with Python and machine learning
-                                </li>
-                                <li class="flex items-start">
-                                    <span class="text-green-500 mr-2">•</span>
-                                    Highlight any data science projects or achievements
-                                </li>
-                                <li class="flex items-start">
-                                    <span class="text-green-500 mr-2">•</span>
-                                    Include relevant certifications or courses
-                                </li>
-                                <li class="flex items-start">
-                                    <span class="text-green-500 mr-2">•</span>
-                                    Quantify your impact with specific metrics
-                                </li>
-                            </ul>
+                    <!-- Matched Skills -->
+                    {% if matched_skills %}
+                    <div class="mt-6">
+                        <h4 class="text-sm font-semibold text-green-700 mb-2">Your Matching Skills</h4>
+                        <div class="flex flex-wrap gap-1">
+                            {% for skill in matched_skills %}
+                                <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">{{ skill.job_skill }}</span>
+                            {% endfor %}
                         </div>
                     </div>
+                    {% endif %}
 
-                    <div class="flex justify-end space-x-3">
-                        <button onclick="closeOptimizeModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
-                        <button onclick="generateOptimizedResume()" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200">
-                            Generate Optimized Resume
-                        </button>
+                    <!-- Missing Skills -->
+                    {% if missing_skills %}
+                    <div class="mt-4">
+                        <h4 class="text-sm font-semibold text-red-700 mb-2">Skills to Develop</h4>
+                        <div class="flex flex-wrap gap-1">
+                            {% for skill in missing_skills %}
+                                <span class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs">{{ skill.skill }}</span>
+                            {% endfor %}
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                    {% endif %}
 
-    <!-- Gradient Definition -->
-    <svg class="hidden">
-        <defs>
-            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
-            </linearGradient>
-        </defs>
-    </svg>
-
-    <script>
-        function openOptimizeModal(jobId) {
-            document.getElementById('optimizeModal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeOptimizeModal() {
-            document.getElementById('optimizeModal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }
-
-        function generateOptimizedResume() {
-            const button = event.target;
-            const originalText = button.textContent;
-            
-            button.textContent = 'Generating...';
-            button.disabled = true;
-            
-            setTimeout(() => {
-                button.textContent = 'Resume Generated!';
-                button.classList.add('bg-green-500');
-                
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.disabled = false;
-                    button.classList.remove('bg-green-500');
-                    closeOptimizeModal();
-                }, 2000);
-            }, 3000);
-        }
-
-        function applyJob(jobId) {
-            const button = document.getElementById(`applyBtn${jobId}`);
-            const originalText = button.innerHTML;
-            
-            button.innerHTML = '<svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Applying...';
-            button.disabled = true;
-            
-            fetch(`/api/apply-job/${jobId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'Content-Type': 'application/json',
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    button.innerHTML = '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Applied';
-                    button.classList.add('bg-green-500');
-                    button.classList.remove('bg-gradient-to-r', 'from-indigo-500', 'to-purple-500');
-                    
-                    // Show success message
-                    alert('Application submitted successfully!');
-                } else {
-                    button.innerHTML = originalText;
-                    button.disabled = false;
-                    alert(data.error || 'Failed to apply for job');
-                }
-            })
-            .catch(error => {
-                button.innerHTML = originalText;
-                button.disabled = false;
-                alert('An error occurred while applying for the job');
-            });
-        }
-    </script>
-</body>
-</html>
-
-
-
-
-
-
-
-{% comment %} {% extends "recruiter_layout.html" %}
-
-{% block title %}Job Details · RecruiterAI{% endblock %}
-
-{% block content %}
-  {% if job_loading %}
-    <div class="max-w-4xl mx-auto">
-      <div class="h-96 backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl animate-pulse"></div>
-    </div>
-  {% elif not job %}
-    <div class="min-h-[60vh] flex items-center justify-center">
-      <div class="text-center">
-        <h2 class="text-2xl font-bold text-slate-800 mb-2">Job not found</h2>
-        <a href="{% url 'jobs' %}"
-           class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
-          Back to Jobs
-        </a>
-      </div>
-    </div>
-  {% else %}
-    <div class="max-w-4xl mx-auto space-y-6">
-      <a href="{% url 'jobs' %}"
-         class="inline-flex items-center text-sm text-slate-600 hover:text-slate-800 mb-2">
-        <span class="mr-2 text-base leading-none">←</span>
-        Back to Jobs
-      </a>
-
-      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-8 shadow-sm">
-        <!-- Header -->
-        <div class="mb-6">
-          <div class="flex items-start justify-between mb-4">
-            <h1 class="text-3xl font-bold text-slate-800">{{ job.title }}</h1>
-            <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold
-                         {% if job.status == 'active' %}bg-emerald-100 text-emerald-700 border-emerald-200
-                         {% elif job.status == 'paused' %}bg-amber-100 text-amber-700 border-amber-200
-                         {% elif job.status == 'closed' %}bg-slate-100 text-slate-700 border-slate-200
-                         {% else %}bg-indigo-100 text-indigo-700 border-indigo-200{% endif %}">
-              {{ job.status }}
-            </span>
-          </div>
-          <p class="text-lg text-slate-600">{{ job.department }}</p>
-        </div>
-
-        <!-- Meta -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-700 mb-6">
-          <div class="flex items-center gap-2">
-            <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-xs font-semibold">📍</span>
-            {{ job.location|default:"Remote" }}
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-xs font-semibold">$</span>
-            {{ job.salary_range_min }}k – {{ job.salary_range_max }}k
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-xs font-semibold">⏰</span>
-            {{ job.employment_type }} · {{ job.experience_level }}
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-xs font-semibold">👥</span>
-            {{ applications|length }} applicants
-          </div>
-        </div>
-
-        <div class="space-y-6 text-sm leading-relaxed text-slate-700">
-          {% if job.description %}
-            <section>
-              <h2 class="text-lg font-semibold text-slate-800 mb-2">Description</h2>
-              <p class="whitespace-pre-line">{{ job.description }}</p>
-            </section>
-          {% endif %}
-
-          {% if job.requirements %}
-            <section>
-              <h2 class="text-lg font-semibold text-slate-800 mb-2">Requirements</h2>
-              <ul class="list-disc list-inside space-y-1">
-                {% for item in job.requirements %}
-                  <li>{{ item }}</li>
-                {% endfor %}
-              </ul>
-            </section>
-          {% endif %}
-
-          {% if job.responsibilities %}
-            <section>
-              <h2 class="text-lg font-semibold text-slate-800 mb-2">Responsibilities</h2>
-              <ul class="list-disc list-inside space-y-1">
-                {% for item in job.responsibilities %}
-                  <li>{{ item }}</li>
-                {% endfor %}
-              </ul>
-            </section>
-          {% endif %}
-
-          {% if job.skills_required %}
-            <section>
-              <h2 class="text-lg font-semibold text-slate-800 mb-2">Required Skills</h2>
-              <div class="flex flex-wrap gap-2">
-                {% for skill in job.skills_required %}
-                  <span class="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 px-3 py-1 text-xs font-semibold">
-                    {{ skill }}
-                  </span>
-                {% endfor %}
-              </div>
-            </section>
-          {% endif %}
-
-          {% if job.nice_to_have %}
-            <section>
-              <h2 class="text-lg font-semibold text-slate-800 mb-2">Nice to Have</h2>
-              <div class="flex flex-wrap gap-2">
-                {% for skill in job.nice_to_have %}
-                  <span class="inline-flex items-center rounded-full border border-slate-200 text-slate-700 px-3 py-1 text-xs font-semibold">
-                    {{ skill }}
-                  </span>
-                {% endfor %}
-              </div>
-            </section>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  {% endif %}
-{% endblock %}
-
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ job.title }} - {{ job.company }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#6366f1',
-                        secondary: '#8b5cf6',
-                        accent: '#f59e0b',
-                    }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="bg-gray-50">
-    {% csrf_token %}
-    
-    <!-- Header -->
-    <div class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <a href="{% url 'candidate' %}" class="text-gray-600 hover:text-gray-900 flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                    Back to Dashboard
-                </a>
-                
-                <div class="flex items-center space-x-4">
-                    {% if user.is_authenticated %}
-                        <span class="text-sm text-gray-600">{{ user.email|default:"Guest User" }}</span>
-                        <a href="{% url 'index' %}" class="text-gray-600 hover:text-gray-900">Logout</a>
-                    {% else %}
-                        <a href="{% url 'index' %}" class="text-gray-600 hover:text-gray-900">Login</a>
+                    <!-- Suggestions -->
+                    {% if suggestions %}
+                    <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                        <h4 class="text-sm font-semibold text-blue-800 mb-2">Tips to Improve</h4>
+                        <ul class="text-xs text-blue-700 space-y-1">
+                            {% for tip in suggestions %}
+                                <li>{{ tip }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <!-- Job Overview Card -->
-            <div class="lg:col-span-2">
-                <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-                    <div class="flex justify-between items-start mb-6">
-                        <div>
-                            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ job.title }}</h1>
-                            <p class="text-xl text-gray-600">{{ job.company }}</p>
-                        </div>
-                        <div class="flex space-x-3">
-                            <button onclick="openOptimizeModal({{ job.id }})" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center">
-                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                                </svg>
-                                Optimize Resume
-                            </button>
-                            <button onclick="applyJob({{ job.id }})" class="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-2 rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-200 flex items-center" id="applyBtn{{ job.id }}">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                </svg>
-                                {% if has_applied %}Applied{% else %}Apply Now{% endif %}
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Job Info -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        <div class="flex items-center text-gray-600">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                            </svg>
-                            <div>
-                                <p class="text-sm text-gray-500">Company</p>
-                                <p class="font-medium">{{ job.company }}</p>
-                            </div>
-                        </div>
-                        
-                        <div class="flex items-center text-gray-600">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                            <div>
-                                <p class="text-sm text-gray-500">Location</p>
-                                <p class="font-medium">{{ job.location }}</p>
-                            </div>
-                        </div>
-                        
-                        <div class="flex items-center text-gray-600">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
-                            <div>
-                                <p class="text-sm text-gray-500">Salary</p>
-                                <p class="font-medium">${{ job.salary_min|floatformat:0 }} - ${{ job.salary_max|floatformat:0 }}</p>
-                            </div>
-                        </div>
-                        
-                        <div class="flex items-center text-gray-600">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <div>
-                                <p class="text-sm text-gray-500">Job Type</p>
-                                <p class="font-medium">{{ job.job_type }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Job Description -->
-                    <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            Job Description
-                        </h3>
-                        <p class="text-gray-700 leading-relaxed">{{ job.description }}</p>
-                    </div>
-
-                    <!-- Skills Required -->
-                    <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                            </svg>
-                            Skills Required
-                        </h3>
-                        <div class="flex flex-wrap gap-2">
-                            {% for skill in skills_required %}
-                                <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">{{ skill }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <!-- Perks & Benefits -->
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path>
-                            </svg>
-                            Perks & Benefits
-                        </h3>
-                        {% if job.benefits %}
-                            <p class="text-gray-700">{{ job.benefits }}</p>
-                        {% else %}
-                            <p class="text-gray-500 italic">Benefits information not available</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- AI Match Score Panel -->
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-xl shadow-sm p-6 sticky top-8">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-6">AI Match Score</h3>
-                    
-                    <!-- Overall Match -->
-                    <div class="text-center mb-8">
-                        <div class="relative w-32 h-32 mx-auto mb-4">
-                            <svg class="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
-                                <circle cx="60" cy="60" r="50" stroke="#e5e7eb" stroke-width="8" fill="none"></circle>
-                                <circle cx="60" cy="60" r="50" stroke="url(#gradient)" stroke-width="8" fill="none" 
-                                        stroke-dasharray="{{ job.match_score|floatformat:0|add:'0' }} 100" 
-                                        stroke-linecap="round"></circle>
-                            </svg>
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <span class="text-2xl font-bold text-gray-900">{{ job.match_score|floatformat:0 }}%</span>
-                            </div>
-                        </div>
-                        <p class="text-lg font-semibold text-gray-900">Overall Match</p>
-                    </div>
-
-                    <!-- Detailed Scores -->
-                    <div class="space-y-4">
-                        <div>
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-medium text-gray-700">Skills Match</span>
-                                <span class="text-sm font-bold text-blue-600">85%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-blue-500 h-2 rounded-full" style="width: 85%"></div>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-medium text-gray-700">Experience Match</span>
-                                <span class="text-sm font-bold text-purple-600">67%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-purple-500 h-2 rounded-full" style="width: 67%"></div>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-medium text-gray-700">Culture Match</span>
-                                <span class="text-sm font-bold text-yellow-600">63%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-yellow-500 h-2 rounded-full" style="width: 63%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Optimize Modal -->
-    <div id="optimizeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-semibold text-gray-900">Optimize Your Resume</h3>
-                        <button onclick="closeOptimizeModal()" class="text-gray-400 hover:text-gray-600">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <!-- Job Info -->
-                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                        <h4 class="font-semibold text-gray-900 mb-2">Job Info</h4>
-                        <p class="text-gray-700">{{ job.title }} at {{ job.company }}</p>
-                        <p class="text-sm text-gray-600">{{ job.location }} • {{ job.job_type }}</p>
-                    </div>
-
-                    <!-- Optimization Suggestions -->
-                    <div class="space-y-4 mb-6">
-                        <div>
-                            <h4 class="font-semibold text-gray-900 mb-2">Key Skills to Highlight</h4>
-                            <div class="flex flex-wrap gap-2">
-                                {% for skill in skills_required %}
-                                    <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">{{ skill }}</span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <h4 class="font-semibold text-gray-900 mb-2">Optimization Suggestions</h4>
-                            <ul class="space-y-2 text-gray-700">
-                                <li class="flex items-start">
-                                    <span class="text-green-500 mr-2">•</span>
-                                    Emphasize your experience with Python and machine learning
-                                </li>
-                                <li class="flex items-start">
-                                    <span class="text-green-500 mr-2">•</span>
-                                    Highlight any data science projects or achievements
-                                </li>
-                                <li class="flex items-start">
-                                    <span class="text-green-500 mr-2">•</span>
-                                    Include relevant certifications or courses
-                                </li>
-                                <li class="flex items-start">
-                                    <span class="text-green-500 mr-2">•</span>
-                                    Quantify your impact with specific metrics
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end space-x-3">
-                        <button onclick="closeOptimizeModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
-                        <button onclick="generateOptimizedResume()" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200">
-                            Generate Optimized Resume
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Gradient Definition -->
-    <svg class="hidden">
-        <defs>
-            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
-            </linearGradient>
-        </defs>
-    </svg>
-
     <script>
-        function openOptimizeModal(jobId) {
-            document.getElementById('optimizeModal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeOptimizeModal() {
-            document.getElementById('optimizeModal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }
-
-        function generateOptimizedResume() {
-            const button = event.target;
-            const originalText = button.textContent;
-            
-            button.textContent = 'Generating...';
-            button.disabled = true;
-            
-            setTimeout(() => {
-                button.textContent = 'Resume Generated!';
-                button.classList.add('bg-green-500');
-                
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.disabled = false;
-                    button.classList.remove('bg-green-500');
-                    closeOptimizeModal();
-                }, 2000);
-            }, 3000);
-        }
-
         function applyJob(jobId) {
             const button = document.getElementById(`applyBtn${jobId}`);
             const originalText = button.innerHTML;
-            
+
             button.innerHTML = '<svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Applying...';
             button.disabled = true;
-            
+
             fetch(`/api/apply-job/${jobId}/`, {
                 method: 'POST',
                 headers: {
@@ -850,9 +312,6 @@
                     button.innerHTML = '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Applied';
                     button.classList.add('bg-green-500');
                     button.classList.remove('bg-gradient-to-r', 'from-indigo-500', 'to-purple-500');
-                    
-                    // Show success message
-                    alert('Application submitted successfully!');
                 } else {
                     button.innerHTML = originalText;
                     button.disabled = false;
@@ -868,7 +327,3 @@
     </script>
 </body>
 </html>
-
-
-
- {% endcomment %}

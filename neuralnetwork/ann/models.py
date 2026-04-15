@@ -28,6 +28,9 @@ class CompanyProfile(models.Model):
 
 
 class Job(models.Model):
+    """
+    Job posting with semantic embedding for matching.
+    """
     # New FK for dynamic company side; keep old company text for backwards compatibility
     company_profile = models.ForeignKey(
         CompanyProfile,
@@ -41,6 +44,17 @@ class Job(models.Model):
     location = models.CharField(max_length=200)
     salary_min = models.IntegerField()
     salary_max = models.IntegerField()
+
+    # Experience requirements for matching
+    experience_min = models.IntegerField(
+        default=0,
+        help_text="Minimum years of experience required"
+    )
+    experience_max = models.IntegerField(
+        default=99,
+        help_text="Maximum years of experience (99 = no limit)"
+    )
+
     job_type = models.CharField(max_length=50, choices=[
         ('full-time', 'Full-time'),
         ('part-time', 'Part-time'),
@@ -57,36 +71,120 @@ class Job(models.Model):
         ('open', 'Open'),
         ('closed', 'Closed'),
     ], default='open')
+
+    # Semantic embedding for similarity matching (384 dimensions)
+    embedding = models.BinaryField(
+        null=True,
+        blank=True,
+        help_text="Semantic embedding vector (384 dims, stored as binary)"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
-    
+    updated_at = models.DateTimeField(auto_now=True)
+
     def __str__(self):
         company_name = self.company_profile.company_name if self.company_profile else self.company
         return f"{self.title} at {company_name}"
 
 class CandidateProfile(models.Model):
+    """
+    Candidate profile with personal info and education for matching.
+    """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+    # Personal Information
+    full_name = models.CharField(max_length=200, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    location = models.CharField(max_length=200, blank=True)
+
+    # Resume
     resume_file = models.FileField(upload_to='resumes/', blank=True, null=True)
     skills = models.TextField(blank=True)  # JSON string of skills
+
+    # Experience
     experience_years = models.IntegerField(default=0)
+
+    # Education (for matching)
+    EDUCATION_LEVEL_CHOICES = [
+        ('high_school', 'High School'),
+        ('associate', 'Associate Degree'),
+        ('bachelor', "Bachelor's Degree"),
+        ('master', "Master's Degree"),
+        ('phd', 'PhD/Doctorate'),
+        ('other', 'Other'),
+    ]
+    education_level = models.CharField(
+        max_length=20,
+        choices=EDUCATION_LEVEL_CHOICES,
+        blank=True,
+        help_text="Highest education level"
+    )
+    education_field = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Field of study (e.g., Computer Science, Law)"
+    )
+
+    # Preferences
     salary_expectation = models.IntegerField(blank=True, null=True)
+
+    # Profile metrics
     profile_strength = models.IntegerField(default=0)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
-        return f"{self.user.username}'s Profile"
+        return f"{self.full_name or self.user.username}'s Profile"
+
+    def calculate_profile_strength(self) -> int:
+        """Calculate profile completeness score (0-100)."""
+        score = 0
+        weights = {
+            'full_name': 10,
+            'phone': 5,
+            'location': 10,
+            'resume_file': 25,
+            'experience_years': 15,
+            'education_level': 15,
+            'education_field': 10,
+            'skills': 10,
+        }
+
+        if self.full_name:
+            score += weights['full_name']
+        if self.phone:
+            score += weights['phone']
+        if self.location:
+            score += weights['location']
+        if self.resume_file:
+            score += weights['resume_file']
+        if self.experience_years > 0:
+            score += weights['experience_years']
+        if self.education_level:
+            score += weights['education_level']
+        if self.education_field:
+            score += weights['education_field']
+        if self.skills:
+            score += weights['skills']
+
+        return min(100, score)
 
 class Application(models.Model):
     candidate = models.ForeignKey(User, on_delete=models.CASCADE)
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
     applied_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=50, choices=[
-        ('applied', 'Applied'),
-        ('reviewed', 'Under Review'),
-        ('interview', 'Interview Scheduled'),
-        ('rejected', 'Rejected'),
-        ('hired', 'Hired'),
-    ], default='applied')
+    STATUS_CHOICES = [
+        ('applied',         'Applied'),
+        ('screening',       'Screening'),
+        ('phone_interview', 'Phone Interview'),
+        ('technical',       'Technical Assessment'),
+        ('final_interview', 'Final Round'),
+        ('offer',           'Offer Extended'),
+        ('hired',           'Hired'),
+        ('rejected',        'Rejected'),
+    ]
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='applied')
 
     class Meta:
         unique_together = ['candidate', 'job']
@@ -484,3 +582,49 @@ class MatchScore(models.Model):
             return 'Potential Match'
         else:
             return 'Low Match'
+
+
+class Interview(models.Model):
+    INTERVIEW_TYPE_CHOICES = [
+        ('phone_screen', 'Phone Screen'),
+        ('technical',    'Technical'),
+        ('behavioral',   'Behavioral'),
+        ('culture_fit',  'Culture Fit'),
+        ('final_round',  'Final Round'),
+    ]
+    STATUS_CHOICES = [
+        ('scheduled',   'Scheduled'),
+        ('completed',   'Completed'),
+        ('cancelled',   'Cancelled'),
+        ('rescheduled', 'Rescheduled'),
+    ]
+
+    application      = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='interviews')
+    scheduled_date   = models.DateTimeField()
+    duration_minutes = models.IntegerField(default=60)
+    interview_type   = models.CharField(max_length=50, choices=INTERVIEW_TYPE_CHOICES, default='technical')
+    status           = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
+    meeting_link     = models.URLField(blank=True)
+    location         = models.CharField(max_length=200, blank=True)
+    interviewer      = models.CharField(max_length=200, blank=True)
+    notes            = models.TextField(blank=True)
+    created_at       = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['scheduled_date']
+
+    def __str__(self):
+        return f"{self.application.candidate.username} – {self.get_interview_type_display()} @ {self.scheduled_date}"
+
+    @property
+    def candidate_name(self):
+        """Display name for templates."""
+        try:
+            profile = self.application.candidate.candidateprofile
+            return profile.full_name or self.application.candidate.username
+        except Exception:
+            return self.application.candidate.get_full_name() or self.application.candidate.username
+
+    @property
+    def job_title(self):
+        return self.application.job.title
