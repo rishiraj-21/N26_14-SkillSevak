@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body class="min-h-screen bg-[#F8FAFC] text-slate-900">
+    {% csrf_token %}
     <div class="flex min-h-screen">
       <!-- Sidebar -->
       <aside class="hidden md:flex md:flex-col w-64 bg-white/80 backdrop-blur-xl border-r border-slate-200/60">

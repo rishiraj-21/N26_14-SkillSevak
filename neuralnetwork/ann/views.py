@@ -17,7 +17,7 @@ import os
 import logging
 
 from datetime import date, timedelta
-from .models import Job, CandidateProfile, Application, CompanyProfile, ParsedResume, CandidateSkill, JobSkill, MatchScore, Interview
+from .models import Job, CandidateProfile, Application, CompanyProfile, ParsedResume, CandidateSkill, JobSkill, MatchScore, Interview, TalentRecommendation
 
 logger = logging.getLogger(__name__)
 
@@ -238,6 +238,7 @@ def candidate_page(request):
         'has_parsed_resume': has_parsed_resume,
         'candidate_skills_count': candidate_skills_count,
         'top_candidate_skills': top_candidate_skills,
+        'open_to_work': profile.open_to_work if profile else False,
     }
     return render(request, 'candidate.html', context)
 
@@ -1926,3 +1927,262 @@ def reparse_resume(request):
         return JsonResponse({
             'error': f'Re-parsing failed: {str(e)}'
         }, status=500)
+
+
+# =============================================================================
+# PASSIVE TALENT DISCOVERY — Reverse Hiring
+# =============================================================================
+
+@login_required
+@require_POST
+def toggle_open_to_work(request):
+    """Flip the candidate's open_to_work flag. Returns new state as JSON."""
+    try:
+        profile = request.user.candidateprofile
+    except CandidateProfile.DoesNotExist:
+        return JsonResponse({'error': 'Candidate profile not found.'}, status=404)
+
+    profile.open_to_work = not profile.open_to_work
+    profile.save(update_fields=['open_to_work'])
+    return JsonResponse({'open_to_work': profile.open_to_work})
+
+
+@login_required
+@require_GET
+def recommended_candidates_api(request, job_id):
+    """
+    Return top-5 open-to-work candidates ranked by match score for a job.
+    Includes candidates with either a real resume file OR a completed ParsedResume.
+    Uses MatchScore cache to avoid recomputing on every page load.
+    """
+    if not hasattr(request.user, 'companyprofile'):
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+
+    job = get_object_or_404(Job, id=job_id, company_profile=request.user.companyprofile)
+
+    # Include candidates with: real resume file OR completed ParsedResume (demo/DB-only)
+    candidates = CandidateProfile.objects.filter(
+        open_to_work=True,
+    ).filter(
+        Q(resume_file__isnull=False, resume_file__gt='') |
+        Q(parsed_resume__parsing_status='completed')
+    ).distinct()
+
+    # Exclude dismissed for this job
+    dismissed_ids = TalentRecommendation.objects.filter(
+        job=job, status='dismissed'
+    ).values_list('candidate_id', flat=True)
+    candidates = candidates.exclude(id__in=dismissed_ids)
+
+    # Exclude overqualified candidates for entry-level/intern roles
+    exp_max = job.experience_max
+    if exp_max == 0:
+        return JsonResponse({'candidates': []})
+    if exp_max is not None and 0 < exp_max < 10:
+        candidates = candidates.filter(experience_years__lte=exp_max + 2)
+
+    from ann.services.matching_engine import MatchingEngine
+    engine = MatchingEngine()
+
+    scored = []
+    for candidate in candidates:
+        try:
+            # Use cached MatchScore when valid, else compute fresh
+            cached = MatchScore.objects.filter(
+                candidate=candidate, job=job, is_valid=True
+            ).first()
+
+            if cached:
+                overall = round(cached.overall_score, 1)
+                breakdown = cached.breakdown
+                matched_skills_raw = cached.matched_skills[:6]
+                skill_names = [
+                    s.get('job_skill') or s.get('candidate_skill', '')
+                    for s in matched_skills_raw
+                    if isinstance(s, dict)
+                ]
+                missing_raw = cached.missing_skills[:4]
+            else:
+                match_data = engine.calculate_match(candidate, job)
+                _save_match_score(candidate, job, match_data)
+                overall = round(match_data.get('overall_score', 0), 1)
+                breakdown_raw = match_data.get('breakdown', {})
+                breakdown = {
+                    'skill_match':       round(breakdown_raw.get('skill_match', 0), 1),
+                    'experience_match':  round(breakdown_raw.get('experience_match', 0), 1),
+                    'semantic_similarity': round(breakdown_raw.get('semantic_similarity', 0), 1),
+                }
+                matched_skills_raw = match_data.get('matched_skills', [])[:6]
+                skill_names = [
+                    s.get('job_skill') or s.get('candidate_skill', '')
+                    for s in matched_skills_raw
+                    if isinstance(s, dict)
+                ]
+                missing_raw = match_data.get('missing_skills', [])[:4]
+
+            # Normalize breakdown keys for consistent JS access
+            if isinstance(breakdown, dict) and 'skill_match' in breakdown:
+                bd = {
+                    'skills':     round(breakdown.get('skill_match', 0), 1),
+                    'experience': round(breakdown.get('experience_match', 0), 1),
+                    'semantic':   round(breakdown.get('semantic_similarity', 0), 1),
+                }
+            else:
+                bd = breakdown  # already normalized from cache
+
+            rec = TalentRecommendation.objects.filter(candidate=candidate, job=job).first()
+            status = rec.status if rec else 'pending'
+
+            # All candidate skills for CV modal
+            all_skills = list(
+                CandidateSkill.objects.filter(candidate=candidate)
+                .order_by('-proficiency_level')
+                .values_list('skill_text', flat=True)[:20]
+            )
+
+            # Resume summary from ParsedResume
+            summary = ''
+            try:
+                pr = candidate.parsed_resume
+                if pr and pr.sections_json:
+                    summary = pr.sections_json.get('summary', '')
+                if not summary and pr and pr.cleaned_text:
+                    summary = pr.cleaned_text[:240].strip()
+            except Exception:
+                pass
+
+            resume_url = candidate.resume_file.url if candidate.resume_file else None
+
+            scored.append({
+                'candidate_id':    candidate.id,
+                'name':            candidate.full_name or candidate.user.username,
+                'initials':        (candidate.full_name or candidate.user.username)[:2].upper(),
+                'headline':        (
+                    f"{candidate.experience_years}y exp"
+                    f"{' · ' + candidate.education_field if candidate.education_field else ''}"
+                ),
+                'location':        candidate.location or '',
+                'education_level': candidate.get_education_level_display() if candidate.education_level else '',
+                'education_field': candidate.education_field or '',
+                'experience_years': candidate.experience_years,
+                'overall_score':   overall,
+                'skills':          [s for s in skill_names if s][:6],
+                'all_skills':      all_skills,
+                'breakdown':       bd,
+                'missing_skills':  [
+                    s.get('skill', s) if isinstance(s, dict) else str(s)
+                    for s in missing_raw
+                ],
+                'summary':         summary,
+                'resume_url':      resume_url,
+                'status':          status,
+            })
+        except Exception as e:
+            logger.warning(f"Skipped candidate {candidate.id} in recommended_candidates_api: {e}")
+
+    scored.sort(key=lambda x: x['overall_score'], reverse=True)
+
+    # Deduplicate: each candidate appears only in the job they score highest for
+    all_company_job_ids = list(
+        Job.objects.filter(company_profile=job.company_profile, status='open')
+        .values_list('id', flat=True)
+    )
+    if len(all_company_job_ids) > 1:
+        all_scores_qs = MatchScore.objects.filter(
+            candidate_id__in=[s['candidate_id'] for s in scored],
+            job_id__in=all_company_job_ids,
+            is_valid=True,
+        ).values('candidate_id', 'job_id', 'overall_score')
+        best_job_for = {}
+        for row in all_scores_qs:
+            cid = row['candidate_id']
+            if cid not in best_job_for or row['overall_score'] > best_job_for[cid][1]:
+                best_job_for[cid] = (row['job_id'], row['overall_score'])
+        scored = [
+            s for s in scored
+            if best_job_for.get(s['candidate_id'], (job.id,))[0] == job.id
+        ]
+
+    return JsonResponse({'candidates': scored[:5]})
+
+
+@login_required
+@require_POST
+def update_recommendation_status(request, job_id, candidate_id):
+    """Upsert a TalentRecommendation status (contacted/shortlisted/dismissed)."""
+    if not hasattr(request.user, 'companyprofile'):
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+
+    job = get_object_or_404(Job, id=job_id, company_profile=request.user.companyprofile)
+    candidate = get_object_or_404(CandidateProfile, id=candidate_id)
+
+    try:
+        data = json.loads(request.body)
+        new_status = data.get('status', '')
+    except (json.JSONDecodeError, AttributeError):
+        new_status = request.POST.get('status', '')
+
+    allowed = {'contacted', 'shortlisted', 'dismissed'}
+    if new_status not in allowed:
+        return JsonResponse({'error': f'Invalid status. Must be one of: {", ".join(allowed)}'}, status=400)
+
+    rec, _ = TalentRecommendation.objects.update_or_create(
+        candidate=candidate,
+        job=job,
+        defaults={'status': new_status},
+    )
+    return JsonResponse({'success': True, 'status': rec.status})
+
+
+@login_required
+@require_GET
+def my_applications_api(request):
+    """Return all applications for the logged-in candidate, with status and match score."""
+    apps = list(
+        Application.objects
+        .filter(candidate=request.user)
+        .select_related('job', 'job__company_profile')
+        .order_by('-applied_at')
+    )
+
+    if not apps:
+        return JsonResponse({'applications': []})
+
+    IN_PROCESS = {'screening', 'phone_interview', 'technical', 'final_interview', 'offer'}
+
+    # Fetch all match scores in ONE query, keyed by job_id
+    score_map = {}
+    try:
+        cp = request.user.candidateprofile
+        job_ids = [a.job_id for a in apps]
+        for ms in MatchScore.objects.filter(candidate=cp, job_id__in=job_ids, is_valid=True).only('job_id', 'overall_score'):
+            score_map[ms.job_id] = round(ms.overall_score, 1)
+    except Exception:
+        pass
+
+    result = []
+    for app in apps:
+        s = app.status
+        if s == 'hired':
+            category = 'hired'
+        elif s == 'rejected':
+            category = 'rejected'
+        elif s in IN_PROCESS:
+            category = 'inprocess'
+        else:
+            category = 'applied'
+
+        result.append({
+            'id':             app.id,
+            'job_title':      app.job.title,
+            'company':        app.job.company_profile.company_name if app.job.company_profile else 'Company',
+            'location':       app.job.location or '',
+            'job_type':       app.job.job_type or '',
+            'applied_at':     app.applied_at.strftime('%b %d, %Y'),
+            'status':         s,
+            'status_display': app.get_status_display(),
+            'category':       category,
+            'match_score':    score_map.get(app.job_id),
+        })
+
+    return JsonResponse({'applications': result})

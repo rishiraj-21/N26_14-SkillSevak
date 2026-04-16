@@ -131,6 +131,9 @@ class CandidateProfile(models.Model):
     # Profile metrics
     profile_strength = models.IntegerField(default=0)
 
+    # Passive talent discovery
+    open_to_work = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -628,3 +631,28 @@ class Interview(models.Model):
     @property
     def job_title(self):
         return self.application.job.title
+
+
+class TalentRecommendation(models.Model):
+    """
+    Tracks recruiter actions on passively-discovered (Open to Work) candidates.
+    Separate from MatchScore which only holds scores.
+    """
+    STATUS_CHOICES = [
+        ('pending',     'Pending'),
+        ('contacted',   'Contacted'),
+        ('shortlisted', 'Shortlisted'),
+        ('dismissed',   'Dismissed'),
+    ]
+    candidate  = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE, related_name='talent_recommendations')
+    job        = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='talent_recommendations')
+    status     = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['candidate', 'job']
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.candidate.user.username} recommended for {self.job.title} [{self.status}]"

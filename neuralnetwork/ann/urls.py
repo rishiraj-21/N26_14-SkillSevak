@@ -61,4 +61,12 @@ urlpatterns = [
     # Phase 6: Async Task Status API
     path('api/task/<str:task_id>/status/', views.get_task_status, name='get_task_status'),
     path('api/resume/processing-status/', views.get_processing_status, name='get_processing_status'),
+
+    # Application Tracking API
+    path('api/candidate/applications/', views.my_applications_api, name='my_applications_api'),
+
+    # Passive Talent Discovery APIs
+    path('api/candidate/open-to-work/toggle/', views.toggle_open_to_work, name='toggle_open_to_work'),
+    path('api/recruiter/jobs/<int:job_id>/recommended/', views.recommended_candidates_api, name='recommended_candidates_api'),
+    path('api/recruiter/jobs/<int:job_id>/recommendations/<int:candidate_id>/status/', views.update_recommendation_status, name='update_recommendation_status'),
 ]
