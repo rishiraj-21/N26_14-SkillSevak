@@ -20,7 +20,6 @@ urlpatterns = [
 
     # Recruiter workspace pages
     path('recruiter/', views.recruiter_page, name='recruiter'),
-    path('recruiter/dashboard/', views.recruiter_dashboard, name='dashboard'),
     path('recruiter/jobs/', views.recruiter_jobs, name='jobs'),
     path('recruiter/jobs/<int:job_id>/', views.recruiter_job_detail, name='recruiter_job_detail'),
     path('recruiter/jobs/<int:job_id>/info/', views.recruiter_job_info, name='recruiter_job_info'),

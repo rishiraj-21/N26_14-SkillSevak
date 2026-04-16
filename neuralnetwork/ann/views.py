@@ -22,10 +22,12 @@ from .models import Job, CandidateProfile, Application, CompanyProfile, ParsedRe
 logger = logging.getLogger(__name__)
 
 
+@ensure_csrf_cookie
 def index(request):
     return render(request, 'index.html')
 
 
+@ensure_csrf_cookie
 def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -242,33 +244,9 @@ def candidate_page(request):
 
 def recruiter_page(request):
     """
-    Entry point for recruiter workspace – redirect to dashboard page.
+    Entry point for recruiter workspace – redirect to jobs page.
     """
-    return redirect('dashboard')
-
-
-def recruiter_dashboard(request):
-    """
-    Dashboard: candidate discovery page.
-    For now, this uses placeholder data so the page renders correctly.
-    """
-    search_term = request.GET.get('q', '')
-    min_match = int(request.GET.get('min_match', 0) or 0)
-    status = request.GET.get('status', '')
-    experience_level = request.GET.get('experience_level', '')
-    sort = request.GET.get('sort', 'match')
-
-    context = {
-        'candidates': [],
-        'candidates_loading': False,
-        'search_term': search_term,
-        'min_match': min_match,
-        'status': status,
-        'experience_levels': ['Junior', 'Mid-Level', 'Senior', 'Lead', 'Executive'],
-        'experience_level': experience_level,
-        'sort': sort,
-    }
-    return render(request, 'dashboard.html', context)
+    return redirect('jobs')
 
 
 @login_required

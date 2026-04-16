@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>{% block title %}RecruiterAI{% endblock %}</title>
+    <title>{% block title %}SkillSevak{% endblock %}</title>
     <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
@@ -19,7 +19,7 @@
             </div>
             <div>
               <div class="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-500">Recruiter</div>
-              <div class="text-lg font-bold text-slate-800">RecruiterAI</div>
+              <div class="text-lg font-bold text-slate-800">SkillSevak</div>
             </div>
           </div>
         </div>
@@ -27,11 +27,6 @@
         <!-- Nav -->
         <nav class="flex-1 px-3 py-4 space-y-1 text-sm font-medium">
           {# Active states are handled with Django url names; adjust as needed #}
-          <a href="{% url 'dashboard' %}"
-             class="flex items-center gap-3 px-3 py-2 rounded-xl transition-colors {% if request.resolver_match.url_name == 'dashboard' %}bg-indigo-600 text-white{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
-            <span class="w-5 h-5 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-semibold">D</span>
-            <span>Dashboard</span>
-          </a>
           <a href="{% url 'jobs' %}"
              class="flex items-center gap-3 px-3 py-2 rounded-xl transition-colors {% if request.resolver_match.url_name == 'jobs' %}bg-indigo-600 text-white{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
             <span class="w-5 h-5 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-semibold">J</span>
@@ -67,7 +62,7 @@
             <div class="h-8 w-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-700 flex items-center justify-center shadow-sm">
               <span class="text-white font-bold text-sm">R</span>
             </div>
-            <span class="font-semibold text-slate-800">RecruiterAI</span>
+            <span class="font-semibold text-slate-800">SkillSevak</span>
           </div>
           {# You can wire this to a mobile drawer later if needed #}
           <button type="button" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white/80 px-2.5 py-1.5 text-slate-700 shadow-sm">
