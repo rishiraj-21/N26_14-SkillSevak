@@ -241,7 +241,7 @@ class MatchingEngine:
                 logger.warning(f"No resume text for candidate {candidate.id}")
                 return 10.0  # Very low - no content
 
-            # Get job embedding (prefer stored, fallback to generate)
+            # Get job embedding (prefer stored, fallback to generate and cache)
             if job.embedding:
                 job_embedding = self.embedding_service.deserialize_embedding(job.embedding)
             else:
@@ -250,6 +250,12 @@ class MatchingEngine:
                 if not job_text.strip():
                     return 50.0
                 job_embedding = self.embedding_service.generate_embedding(job_text)
+                # Cache it for future calls
+                try:
+                    job.embedding = self.embedding_service.serialize_embedding(job_embedding)
+                    job.save(update_fields=['embedding'])
+                except Exception:
+                    pass
 
             # Calculate cosine similarity
             similarity = cosine_similarity(
@@ -491,10 +497,24 @@ class MatchingEngine:
         job_min = getattr(job, 'experience_min', None)
         job_max = getattr(job, 'experience_max', None)
 
-        # If no experience requirements specified
+        # If no experience requirements specified, infer from job title
         if job_min is None or job_min == 0:
             if job_max is None or job_max >= 99:
-                # No experience requirements set - neutral score
+                job_title = (getattr(job, 'title', '') or '').lower()
+                # Senior/management roles — infer 5+ years expected
+                if any(w in job_title for w in ['senior', 'lead', 'principal', 'head', 'director', 'manager', 'architect']):
+                    if candidate_exp < 5:
+                        gap = 5 - candidate_exp
+                        return max(20.0, 100.0 - gap * 15)
+                    return 100.0
+                # Entry-level roles — 0-2 years is perfect
+                elif any(w in job_title for w in ['intern', 'internship', 'junior', 'entry', 'graduate', 'trainee', 'fresher', 'associate']):
+                    if candidate_exp <= 2:
+                        return 100.0
+                    elif candidate_exp <= 5:
+                        return max(70.0, 100.0 - (candidate_exp - 2) * 10)
+                    return 60.0
+                # Mid-level — neutral
                 return 50.0
 
         # Apply defaults for calculation
@@ -528,14 +548,14 @@ class MatchingEngine:
         For MVP, checks if education fields are filled and relevant.
         Returns score 0-100.
         """
-        score = 30.0  # Base score (low - must prove relevance)
+        score = 0.0  # No base — must have data to score
 
         # Check if candidate has education info
         education_level = getattr(candidate, 'education_level', None)
         education_field = getattr(candidate, 'education_field', None)
 
         if education_level:
-            score += 20.0
+            score += 50.0  # Has degree info
 
         if education_field:
             score += 20.0

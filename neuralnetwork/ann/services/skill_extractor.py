@@ -173,28 +173,26 @@ class DynamicSkillExtractor:
             return []
 
         doc = self.nlp(text)
-        skills: List[Dict] = []
-        seen: Set[str] = set()
+        all_raw_skills: List[Dict] = []
+
+        # Run each extraction method with its own seen set so they don't
+        # block each other. _deduplicate_skills keeps the highest-confidence version.
 
         # Method 1: Noun phrases (catches "machine learning", "project management")
-        noun_phrase_skills = self._extract_noun_phrases(doc, section, seen)
-        skills.extend(noun_phrase_skills)
+        all_raw_skills.extend(self._extract_noun_phrases(doc, section, set()))
 
-        # Method 2: Proper nouns (catches "Python", "Docker", "AWS")
-        proper_noun_skills = self._extract_proper_nouns(doc, section, seen)
-        skills.extend(proper_noun_skills)
+        # Method 2: Proper nouns (catches "Python", "Docker", "AWS") — confidence 0.80
+        all_raw_skills.extend(self._extract_proper_nouns(doc, section, set()))
 
         # Method 3: Named entities (catches organizations, products, technologies)
-        entity_skills = self._extract_named_entities(doc, section, seen)
-        skills.extend(entity_skills)
+        all_raw_skills.extend(self._extract_named_entities(doc, section, set()))
 
-        # Method 4: Pattern-based extraction for skills section
+        # Method 4: Pattern-based extraction for skills section — confidence 0.90 (highest)
         if section.lower() in ['skills', 'technical skills', 'core competencies']:
-            pattern_skills = self._extract_from_patterns(text, section, seen)
-            skills.extend(pattern_skills)
+            all_raw_skills.extend(self._extract_from_patterns(text, section, set()))
 
-        # Categorize and deduplicate
-        skills = self._deduplicate_skills(skills)
+        # Deduplicate: keeps highest-confidence version of each normalized skill
+        skills = self._deduplicate_skills(all_raw_skills)
 
         logger.info(f"Extracted {len(skills)} skills from section: {section}")
         return skills
@@ -313,6 +311,12 @@ class DynamicSkillExtractor:
         parts = re.split(delimiters, text)
 
         for part in parts:
+            # Strip "Header: " prefix (e.g., "Languages: Python" → "Python")
+            if ':' in part:
+                after_colon = part.split(':', 1)[1].strip()
+                if after_colon:
+                    part = after_colon
+
             skill_text = self._clean_skill_text(part)
             normalized = skill_text.lower()
 
@@ -382,6 +386,10 @@ class DynamicSkillExtractor:
 
         # Skip overly long phrases (more than 5 words)
         if len(skill.split()) > 5:
+            return False
+
+        # Skip header/label patterns (e.g., "Languages: Python", "Skills: Python")
+        if ':' in skill:
             return False
 
         # Skip common non-skill patterns

@@ -3,13 +3,13 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods, require_POST, require_GET
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.utils import timezone
 from django.conf import settings
 import json
@@ -74,6 +74,33 @@ def logout_view(request):
     return redirect('index')
 
 
+def _save_match_score(profile, job, match_data):
+    """Persist a computed match score to the MatchScore DB table."""
+    try:
+        breakdown = match_data.get('breakdown', {})
+        MatchScore.objects.update_or_create(
+            candidate=profile,
+            job=job,
+            defaults={
+                'overall_score': match_data['overall_score'],
+                'semantic_similarity': breakdown.get('semantic_similarity', 0),
+                'skill_match_score': breakdown.get('skill_match', 0),
+                'experience_match_score': breakdown.get('experience_match', 0),
+                'education_match_score': breakdown.get('education_match', 0),
+                'profile_completeness_score': breakdown.get('profile_completeness', 0),
+                'matched_skills': match_data.get('matched_skills', []),
+                'missing_skills': match_data.get('missing_skills', []),
+                'suggestions': match_data.get('suggestions', []),
+                'is_valid': True,
+            }
+        )
+    except Exception as e:
+        logger.warning(f"Failed to save match score for {profile.user.username} <-> {job.title}: {e}")
+
+
+
+
+@ensure_csrf_cookie
 def candidate_page(request):
     """
     Candidate dashboard with AI-powered job matching.
@@ -107,6 +134,16 @@ def candidate_page(request):
     # Get all open jobs
     jobs = list(Job.objects.filter(status='open'))
 
+    # Auto-parse resume if uploaded but never parsed
+    if request.user.is_authenticated and profile and profile.resume_file:
+        parsed_exists = ParsedResume.objects.filter(candidate=profile, parsing_status='completed').exists()
+        if not parsed_exists:
+            try:
+                _upload_resume_sync(request, profile)
+                logger.info(f"Auto-parsed resume for {request.user.username} on page load")
+            except Exception as e:
+                logger.warning(f"Auto-parse failed for {request.user.username}: {e}")
+
     # Calculate real match scores for authenticated users with resume
     if request.user.is_authenticated and profile and profile.resume_file:
         from ann.services.matching_engine import MatchingEngine
@@ -114,9 +151,11 @@ def candidate_page(request):
         try:
             engine = MatchingEngine()
 
-            # Calculate matches and attach to job objects
+            # Calculate matches, save to DB, and attach to job objects
             for job in jobs:
                 match_data = engine.calculate_match(profile, job)
+                # Persist to MatchScore table
+                _save_match_score(profile, job, match_data)
                 # Attach match data directly to job object for template access
                 job.match_score = match_data['overall_score']
                 job.match_data = match_data
@@ -170,6 +209,21 @@ def candidate_page(request):
         # Count jobs with 70%+ match
         high_matches_count = len([j for j in jobs_list if j.match_score >= 70])
 
+    # Extra context for sidebar
+    candidate_skills_count = 0
+    has_parsed_resume = False
+    top_candidate_skills = []
+    if profile and request.user.is_authenticated:
+        candidate_skills_count = CandidateSkill.objects.filter(candidate=profile).count()
+        has_parsed_resume = ParsedResume.objects.filter(
+            candidate=profile, parsing_status='completed'
+        ).exists()
+        top_candidate_skills = list(
+            CandidateSkill.objects.filter(candidate=profile)
+            .order_by('-confidence_score')
+            .values_list('skill_text', flat=True)[:8]
+        )
+
     context = {
         'user': request.user if request.user.is_authenticated else None,
         'profile': profile,
@@ -179,6 +233,9 @@ def candidate_page(request):
         'high_matches_count': high_matches_count,
         'current_filter': filter_type,
         'has_resume': bool(profile and profile.resume_file),
+        'has_parsed_resume': has_parsed_resume,
+        'candidate_skills_count': candidate_skills_count,
+        'top_candidate_skills': top_candidate_skills,
     }
     return render(request, 'candidate.html', context)
 
@@ -202,7 +259,7 @@ def recruiter_dashboard(request):
     sort = request.GET.get('sort', 'match')
 
     context = {
-        'candidates': [],  # TODO: wire to real Candidate model if available
+        'candidates': [],
         'candidates_loading': False,
         'search_term': search_term,
         'min_match': min_match,
@@ -212,23 +269,6 @@ def recruiter_dashboard(request):
         'sort': sort,
     }
     return render(request, 'dashboard.html', context)
-
-
-# def recruiter_jobs(request):
-#     """
-#     Jobs management page – currently shows basic stats with no jobs.
-#     """
-#     jobs = []  # replace with real queryset when you add a Job entity for recruiter UI
-#     active_jobs = 0
-#     total_applications = 0
-
-#     context = {
-#         'jobs': jobs,
-#         'jobs_loading': False,
-#         'active_jobs': active_jobs,
-#         'total_applications': total_applications,
-#     }
-#     return render(request, 'jobs.html', context)
 
 
 @login_required
@@ -342,15 +382,13 @@ def recruiter_pipeline(request):
 
     all_apps = list(apps_qs)
 
-    # Bulk-fetch CandidateProfiles and MatchScores (avoid N+1)
+    # Bulk-fetch CandidateProfiles (avoid N+1)
     user_ids = [a.candidate_id for a in all_apps]
     profiles = {cp.user_id: cp for cp in CandidateProfile.objects.filter(user_id__in=user_ids)}
-    job_ids  = list({a.job_id for a in all_apps})
-    p_ids    = [p.id for p in profiles.values()]
-    scores   = {
-        (ms.candidate_id, ms.job_id): ms
-        for ms in MatchScore.objects.filter(candidate_id__in=p_ids, job_id__in=job_ids)
-    }
+
+    # Live match engine
+    from ann.services.matching_engine import MatchingEngine
+    engine = MatchingEngine()
 
     STAGE_DEFS = [
         {'id': 'applied',         'label': 'Applied',        'hdr_bg': 'bg-slate-100',   'hdr_border': 'border-slate-300',   'badge_bg': 'bg-slate-200',   'badge_text': 'text-slate-700'},
@@ -370,13 +408,27 @@ def recruiter_pipeline(request):
             if app.status != s['id']:
                 continue
             profile = profiles.get(app.candidate_id)
-            ms = scores.get((profile.id if profile else -1, app.job_id))
             display_name = (
                 (profile.full_name if profile and profile.full_name else None)
                 or app.candidate.get_full_name()
                 or app.candidate.username
             )
             initials = ''.join(w[0].upper() for w in display_name.split()[:2])
+
+            # Compute live match score
+            match_score = None
+            top_skills = []
+            if profile:
+                try:
+                    match_data = engine.calculate_match(profile, app.job)
+                    match_score = round(match_data.get('overall_score', 0))
+                    top_skills = [
+                        sk.get('job_skill', sk.get('skill', ''))
+                        for sk in match_data.get('matched_skills', [])[:3]
+                    ]
+                except Exception as e:
+                    logger.warning(f"Pipeline match error for {app.candidate_id}: {e}")
+
             cards.append({
                 'app_id':         app.id,
                 'candidate_name': display_name,
@@ -384,10 +436,9 @@ def recruiter_pipeline(request):
                 'job_title':      app.job.title,
                 'job_id':         app.job_id,
                 'applied_at':     app.applied_at,
-                'match_score':    round(ms.overall_score) if ms else None,
-                'match_quality':  ms.match_quality if ms else '',
-                'top_skills':     [sk.get('job_skill', sk.get('skill', ''))
-                                   for sk in (ms.matched_skills or [])[:3]] if ms else [],
+                'match_score':    match_score,
+                'match_quality':  '',
+                'top_skills':     top_skills,
                 'resume_url':     profile.resume_file.url if profile and profile.resume_file else None,
             })
         stages.append({**s, 'apps': cards, 'count': len(cards)})
@@ -524,29 +575,68 @@ def interview_update_status(request, interview_id):
 
 def recruiter_analytics(request):
     """
-    Analytics dashboard – renders with zeroed metrics.
+    Analytics dashboard – real metrics from DB.
     """
-    pipeline_data = [
-        {'stage': 'Applied', 'count': 0},
-        {'stage': 'Screening', 'count': 0},
-        {'stage': 'Interview', 'count': 0},
-        {'stage': 'Offer', 'count': 0},
-        {'stage': 'Hired', 'count': 0},
-    ]
+    company = getattr(request.user, 'companyprofile', None)
+
+    if company:
+        company_jobs = Job.objects.filter(company_profile=company)
+        company_apps = Application.objects.filter(job__company_profile=company)
+
+        total_applications = company_apps.count()
+        active_jobs = company_jobs.filter(status='open').count()
+        scheduled_interviews = Interview.objects.filter(
+            job__company_profile=company, status='scheduled'
+        ).count()
+        hired_count = company_apps.filter(status='hired').count()
+        conversion_rate = round((hired_count / total_applications * 100), 1) if total_applications else 0
+
+        stage_counts = {
+            'applied': company_apps.filter(status='applied').count(),
+            'screening': company_apps.filter(status='screening').count(),
+            'technical': company_apps.filter(status__in=['phone_interview', 'technical', 'final_interview']).count(),
+            'offer': company_apps.filter(status='offer').count(),
+            'hired': hired_count,
+        }
+
+        pipeline_data = [
+            {'stage': 'Applied',    'count': stage_counts['applied']},
+            {'stage': 'Screening',  'count': stage_counts['screening']},
+            {'stage': 'Interview',  'count': stage_counts['technical']},
+            {'stage': 'Offer',      'count': stage_counts['offer']},
+            {'stage': 'Hired',      'count': stage_counts['hired']},
+        ]
+
+        top_jobs_qs = company_jobs.annotate(
+            app_count=Count('application')
+        ).order_by('-app_count')[:5]
+        top_jobs = [{'title': j.title, 'count': j.app_count} for j in top_jobs_qs]
+        max_job_applications = top_jobs[0]['count'] if top_jobs else 0
+    else:
+        total_applications = 0
+        active_jobs = 0
+        scheduled_interviews = 0
+        conversion_rate = 0
+        pipeline_data = [
+            {'stage': 'Applied',   'count': 0},
+            {'stage': 'Screening', 'count': 0},
+            {'stage': 'Interview', 'count': 0},
+            {'stage': 'Offer',     'count': 0},
+            {'stage': 'Hired',     'count': 0},
+        ]
+        top_jobs = []
+        max_job_applications = 0
+
     max_pipeline_count = max((row['count'] for row in pipeline_data), default=0)
 
-    source_data = []  # e.g. [{'name': 'LinkedIn', 'value': 10, 'percent': 50, 'color': '#6366f1'}, ...]
-    top_jobs = []
-    max_job_applications = 0
-
     context = {
-        'total_applications': 0,
-        'active_jobs': 0,
-        'scheduled_interviews': 0,
-        'conversion_rate': 0,
+        'total_applications': total_applications,
+        'active_jobs': active_jobs,
+        'scheduled_interviews': scheduled_interviews,
+        'conversion_rate': conversion_rate,
         'pipeline_data': pipeline_data,
         'max_pipeline_count': max_pipeline_count,
-        'source_data': source_data,
+        'source_data': [],
         'top_jobs': top_jobs,
         'max_job_applications': max_job_applications,
     }
@@ -851,16 +941,6 @@ def company_create_job(request):
     return render(request, 'company_create_job.html', {'editing': False})
 
 
-# @login_required
-# def company_job_applicants(request, job_id):
-#     if not hasattr(request.user, 'companyprofile'):
-#         messages.error(request, 'Only companies can access this page.')
-#         return redirect('index')
-
-#     job = get_object_or_404(Job, id=job_id, company_profile=request.user.companyprofile)
-#     apps = Application.objects.filter(job=job).select_related('candidate')
-#     return render(request, 'company_job_applicants.html', {'job': job, 'applications': apps})
-
 @login_required
 def company_job_applicants(request, job_id):
     """
@@ -882,47 +962,41 @@ def company_job_applicants(request, job_id):
     # Get status choices from the model
     status_choices = Application._meta.get_field('status').choices
 
-    # Calculate match scores for each applicant
+    # Always compute live match scores
     from ann.services.matching_engine import MatchingEngine
-
-    applications_with_scores = []
     engine = MatchingEngine()
 
+    candidate_ids = [app.candidate_id for app in apps]
+    profile_map = {
+        cp.user_id: cp
+        for cp in CandidateProfile.objects.filter(user_id__in=candidate_ids)
+    }
+
+    applications_with_scores = []
     for app in apps:
-        try:
-            # Get candidate profile
-            candidate_profile = CandidateProfile.objects.filter(user=app.candidate).first()
+        candidate_profile = profile_map.get(app.candidate_id)
+        app.candidate_profile = candidate_profile
+        app.match_score = 0
+        app.match_data = None
+        app.matched_skills = []
+        app.missing_skills = []
+        app.top_skills = []
+        app.breakdown = {}
 
-            if candidate_profile:
-                # Calculate match score
+        if candidate_profile:
+            try:
                 match_data = engine.calculate_match(candidate_profile, job)
-
-                # Get candidate's top skills
-                top_skills = list(CandidateSkill.objects.filter(
-                    candidate=candidate_profile
-                ).order_by('-proficiency_level')[:5].values_list('skill_text', flat=True))
-
-                app.match_score = match_data['overall_score']
-                app.match_data = match_data
+                app.match_score = round(match_data.get('overall_score', 0), 1)
                 app.matched_skills = match_data.get('matched_skills', [])[:5]
                 app.missing_skills = match_data.get('missing_skills', [])[:3]
-                app.top_skills = top_skills
-                app.candidate_profile = candidate_profile
-            else:
-                app.match_score = 0
-                app.match_data = None
-                app.matched_skills = []
-                app.missing_skills = []
-                app.top_skills = []
-                app.candidate_profile = None
+                app.breakdown = match_data.get('breakdown', {})
+                app.match_data = match_data
+            except Exception as e:
+                logger.error(f"Match compute error for applicant {app.id}: {e}")
 
-        except Exception as e:
-            logger.error(f"Error calculating match for applicant {app.id}: {e}")
-            app.match_score = 0
-            app.match_data = None
-            app.matched_skills = []
-            app.missing_skills = []
-            app.top_skills = []
+            app.top_skills = list(CandidateSkill.objects.filter(
+                candidate=candidate_profile
+            ).order_by('-confidence_score')[:5].values_list('skill_text', flat=True))
 
         applications_with_scores.append(app)
 
@@ -1042,21 +1116,24 @@ def extract_candidate_skills(profile, sections: dict, full_text: str) -> int:
     all_skills = []
     seen_normalized = set()
 
-    # Map resume sections to CandidateSkill source choices
-    section_mapping = {
+    # Only extract from real content sections - NOT contact/education/other which produce garbage
+    VALID_SECTIONS = {
         'skills': 'skills_section',
         'experience': 'experience',
         'projects': 'projects',
-        'education': 'education',
         'summary': 'summary',
+        'certifications': 'skills_section',
+        'awards': 'skills_section',
     }
 
-    # Extract skills from each section
+    # Extract skills from whitelisted sections only
     for section_name, section_text in sections.items():
+        if section_name not in VALID_SECTIONS:
+            continue  # Skip: contact, education, other, languages, interests, references
         if not section_text or not section_text.strip():
             continue
 
-        source = section_mapping.get(section_name, 'full_text')
+        source = VALID_SECTIONS[section_name]
         skills = extractor.extract_skills(section_text, section_name)
 
         for skill in skills:
@@ -1066,21 +1143,16 @@ def extract_candidate_skills(profile, sections: dict, full_text: str) -> int:
                 skill['db_source'] = source
                 all_skills.append(skill)
 
-    # Also extract from full text (catches skills missed in section parsing)
-    full_text_skills = extractor.extract_skills(full_text, 'full_text')
-    for skill in full_text_skills:
-        normalized = skill['normalized']
-        if normalized not in seen_normalized:
-            seen_normalized.add(normalized)
-            skill['db_source'] = 'full_text'
-            all_skills.append(skill)
-
     # Clear existing skills for this candidate
     CandidateSkill.objects.filter(candidate=profile).delete()
 
-    # Store extracted skills in database
+    # Store extracted skills in database — only high-confidence skills (reduces garbage)
+    MIN_CONFIDENCE = 0.75
     skills_created = 0
     for skill_data in all_skills:
+        # Skip low-confidence extractions (noun phrases score 0.70, proper nouns 0.80+)
+        if skill_data.get('confidence', 0.7) < MIN_CONFIDENCE:
+            continue
         try:
             # Estimate proficiency from context
             proficiency = extractor.estimate_proficiency(
@@ -1234,6 +1306,102 @@ def generate_job_embedding(job) -> bool:
     except Exception as e:
         logger.error(f"Failed to generate embedding for job '{job.title}': {e}")
         return False
+
+
+def _infer_experience_years(sections: dict) -> int:
+    """
+    Infer candidate's years of experience from resume sections.
+    Uses explicit 'X years' statements first, then date ranges.
+    """
+    import re
+    from datetime import datetime
+
+    exp_text = sections.get('experience', '') or ''
+    full_text = ' '.join(v for v in sections.values() if v)
+    current_year = datetime.now().year
+
+    # Pattern 1: Explicit "X years of experience" statements
+    explicit_patterns = [
+        r'(\d+)\+?\s*years?\s+of\s+(?:experience|exp)',
+        r'(\d+)\+?\s*years?\s+(?:experience|exp)',
+        r'over\s+(\d+)\s+years?',
+        r'(\d+)\s*\+\s*years?\s+(?:in|of)',
+    ]
+    for pattern in explicit_patterns:
+        matches = re.findall(pattern, full_text, re.IGNORECASE)
+        if matches:
+            years = [int(m) for m in matches if 1 <= int(m) <= 40]
+            if years:
+                return max(years)
+
+    # Pattern 2: Date ranges in experience section (2018-2022, Jan 2019 - Present)
+    year_ranges = re.findall(
+        r'\b(20\d{2}|19\d{2})\b\s*[-–]\s*\b(20\d{2}|present|current|now)\b',
+        exp_text, re.IGNORECASE
+    )
+    if year_ranges:
+        total = 0
+        for start, end in year_ranges:
+            s = int(start)
+            e = current_year if end.lower() in ('present', 'current', 'now') else int(end)
+            if 1970 <= s <= current_year and s < e:
+                total += e - s
+        if total > 0:
+            return min(total, 40)
+
+    # Pattern 3: Span of years mentioned in experience section
+    years_in_exp = [int(y) for y in re.findall(r'\b(20\d{2}|19\d{2})\b', exp_text)
+                    if 1970 <= int(y) <= current_year]
+    if years_in_exp:
+        span = max(years_in_exp) - min(years_in_exp)
+        if span > 0:
+            return min(span, 40)
+
+    return 0
+
+
+def _infer_education_from_sections(sections: dict):
+    """
+    Infer education level and field from resume education section.
+    Returns (level_str, field_str).
+    """
+    import re
+
+    edu_text = sections.get('education', '') or ''
+    # Use education + full text for field detection
+    full_text = edu_text + ' ' + ' '.join(v for v in sections.values() if v)
+
+    level = ''
+    # Check from highest to lowest (values must match EDUCATION_LEVEL_CHOICES in models.py)
+    if re.search(r'\b(ph\.?d\.?|phd|doctor(?:ate|al)|d\.phil\.?)\b', full_text, re.IGNORECASE):
+        level = 'phd'
+    elif re.search(r"\b(m\.?s\.?c?\.?|m\.?tech\.?|m\.?e\.?|mba|master'?s?|master\s+of|post.?grad)\b", full_text, re.IGNORECASE):
+        level = 'master'
+    elif re.search(r"\b(b\.?s\.?c?\.?|b\.?tech\.?|b\.?e\.?|b\.?a\.?|bachelor'?s?|bachelor\s+of|undergraduate|b\.?com\.?)\b", full_text, re.IGNORECASE):
+        level = 'bachelor'
+    elif re.search(r'\b(diploma|associate|polytechnic|a\.?d\.?)\b', full_text, re.IGNORECASE):
+        level = 'associate'
+    elif re.search(r'\b(12th|hsc|high\s+school|secondary|10\+2)\b', full_text, re.IGNORECASE):
+        level = 'high_school'
+
+    field = ''
+    field_patterns = [
+        (r'\b(computer\s+science|c\.?s\.?|software\s+engineering|information\s+technology|i\.?t\.?)\b', 'Computer Science'),
+        (r'\b(data\s+science|machine\s+learning|artificial\s+intelligence|analytics)\b', 'Data Science'),
+        (r'\b(electrical|electronics|ece|eee)\b', 'Electrical Engineering'),
+        (r'\b(mechanical|mechatronics)\b', 'Mechanical Engineering'),
+        (r'\b(civil|structural\s+engineering)\b', 'Civil Engineering'),
+        (r'\b(business\s+administration|commerce|b\.?b\.?a\.?|b\.?com\.?)\b', 'Business Administration'),
+        (r'\b(finance|accounting|economics)\b', 'Finance'),
+        (r'\b(marketing)\b', 'Marketing'),
+        (r'\b(mathematics|math|statistics|applied\s+math)\b', 'Mathematics'),
+    ]
+    for pattern, label in field_patterns:
+        if re.search(pattern, full_text, re.IGNORECASE):
+            field = label
+            break
+
+    return level, field
 
 
 @require_http_methods(["POST"])
@@ -1399,8 +1567,18 @@ def _upload_resume_sync(request, profile):
         }
     )
 
-    # Update profile strength based on resume completeness
+    # Auto-infer experience years and education from resume content
+    inferred_exp = _infer_experience_years(sections)
+    inferred_edu_level, inferred_edu_field = _infer_education_from_sections(sections)
+
+    # Update profile strength + inferred fields (only overwrite if we found something)
     profile.profile_strength = completeness_score
+    if inferred_exp > 0:
+        profile.experience_years = inferred_exp
+    if inferred_edu_level and not profile.education_level:
+        profile.education_level = inferred_edu_level
+    if inferred_edu_field and not profile.education_field:
+        profile.education_field = inferred_edu_field
     profile.save()
 
     # Phase 3: Extract skills from resume using NLP
@@ -1453,29 +1631,6 @@ def apply_job(request, job_id):
         }, status=400)
 
 
-# @login_required
-# def recruiter_job_detail(request, job_id):
-#     """
-#     Recruiter-side job detail page showing job info + applicants
-#     """
-#     if not hasattr(request.user, 'companyprofile'):
-#         messages.error(request, 'Only companies can access this page.')
-#         return redirect('index')
-    
-#     # Get the job (must belong to this company)
-#     job = get_object_or_404(Job, id=job_id, company_profile=request.user.companyprofile)
-    
-#     # Get all applications for this job
-#     applications = Application.objects.filter(job=job).select_related('candidate').order_by('-applied_at')
-    
-#     context = {
-#         'job': job,
-#         'applications': applications,
-#     }
-    
-#     return render(request, 'recruiter_job_detail.html', context)
-
-
 @login_required
 def recruiter_job_detail(request, job_id):
     """
@@ -1522,12 +1677,19 @@ def recruiter_job_detail(request, job_id):
     new_applicants = Application.objects.filter(job=job, status='applied').count()
     in_review = Application.objects.filter(job=job, status__in=['screening', 'interview']).count()
 
-    # Calculate match scores for each applicant
+    # Always compute live match scores
     from ann.services.matching_engine import MatchingEngine
     engine = MatchingEngine()
 
+    candidate_ids = [app.candidate_id for app in applications]
+    profile_map = {
+        cp.user_id: cp
+        for cp in CandidateProfile.objects.filter(user_id__in=candidate_ids)
+    }
+
     applications_with_scores = []
     for app in applications:
+        profile = profile_map.get(app.candidate_id)
         app_data = {
             'application': app,
             'match_score': 0,
@@ -1535,19 +1697,21 @@ def recruiter_job_detail(request, job_id):
             'missing_skills': [],
             'breakdown': {},
             'suggestions': [],
+            'candidate_name': app.candidate.get_full_name() or app.candidate.username,
+            'candidate_email': app.candidate.email,
+            'candidate_profile': profile,
         }
-        try:
-            profile = CandidateProfile.objects.get(user=app.candidate)
-            match_data = engine.calculate_match(profile, job)
 
-            # Use the same data that candidates see
-            app_data['match_score'] = match_data.get('overall_score', 0)
-            app_data['matched_skills'] = match_data.get('matched_skills', [])[:5]
-            app_data['missing_skills'] = match_data.get('missing_skills', [])[:3]
-            app_data['breakdown'] = match_data.get('breakdown', {})
-            app_data['suggestions'] = match_data.get('suggestions', [])
-        except CandidateProfile.DoesNotExist:
-            pass
+        if profile:
+            try:
+                match_data = engine.calculate_match(profile, job)
+                app_data['match_score'] = round(match_data.get('overall_score', 0), 1)
+                app_data['matched_skills'] = match_data.get('matched_skills', [])[:5]
+                app_data['missing_skills'] = match_data.get('missing_skills', [])[:3]
+                app_data['breakdown'] = match_data.get('breakdown', {})
+                app_data['suggestions'] = match_data.get('suggestions', [])
+            except Exception as e:
+                logger.error(f"Match compute error for {app.candidate.username}: {e}")
 
         applications_with_scores.append(app_data)
 

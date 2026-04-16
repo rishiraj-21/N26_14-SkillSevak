@@ -192,7 +192,7 @@
                   {% if item.match_score >= 85 %}Excellent Match{% elif item.match_score >= 70 %}Good Match{% elif item.match_score >= 50 %}Potential{% else %}Low Match{% endif %}
                 </p>
 
-                <!-- Score Breakdown -->
+                <!-- Score Breakdown (from DB) -->
                 {% if item.breakdown %}
                 <div class="mt-3 pt-3 border-t border-slate-200 space-y-1.5">
                   <div class="flex justify-between text-xs">
@@ -207,7 +207,12 @@
                     <span class="text-slate-500">Semantic</span>
                     <span class="font-medium text-slate-700">{{ item.breakdown.semantic_similarity|floatformat:0 }}%</span>
                   </div>
+                  <div class="flex justify-between text-xs">
+                    <span class="text-slate-500">Education</span>
+                    <span class="font-medium text-slate-700">{{ item.breakdown.education_match|default:0|floatformat:0 }}%</span>
+                  </div>
                 </div>
+                <p class="text-xs text-slate-400 mt-2 text-center">Source: DB</p>
                 {% endif %}
               </div>
             </div>
