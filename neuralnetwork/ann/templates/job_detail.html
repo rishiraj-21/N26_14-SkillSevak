@@ -2,328 +2,536 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ job.title }} - {{ job.company }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#6366f1',
-                        secondary: '#8b5cf6',
-                        accent: '#f59e0b',
-                    }
-                }
-            }
-        }
-    </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ job.title }} · {{ job.company }} · SkillSevak</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: 'Inter', system-ui, sans-serif; box-sizing: border-box; }
+
+    body { background: #f4f4f8; min-height: 100vh; margin: 0; }
+
+    /* Navbar */
+    .navbar {
+      position: sticky; top: 0; z-index: 50;
+      background: white;
+      border-bottom: 1px solid #ececf3;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; height: 60px;
+    }
+    .nav-brand { display: flex; align-items: center; gap: 10px; }
+    .nav-logo {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: linear-gradient(135deg, #7c3aed, #9333ea);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nav-logo span { color: white; font-weight: 700; font-size: 0.88rem; }
+    .nav-brand-name { font-weight: 700; font-size: 0.95rem; color: #1a1730; }
+    .nav-back {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.82rem; color: #6b7280; text-decoration: none;
+      padding: 6px 14px; border-radius: 8px; border: 1px solid #e5e7eb;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .nav-back:hover { border-color: #7c3aed; color: #7c3aed; background: #f5f3ff; }
+    .nav-right { display: flex; align-items: center; gap: 12px; font-size: 0.82rem; color: #6b7280; }
+    .nav-right a { color: #6b7280; text-decoration: none; transition: color 0.15s; }
+    .nav-right a:hover { color: #7c3aed; }
+
+    /* Page grid */
+    .page-grid {
+      max-width: 1120px; margin: 0 auto;
+      padding: 28px 24px;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 22px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .page-grid { grid-template-columns: 1fr; }
+      .sidebar-col { order: -1; }
+    }
+
+    /* Panel */
+    .panel {
+      background: white;
+      border: 1px solid #ececf3;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .panel:last-child { margin-bottom: 0; }
+
+    /* Job header */
+    .job-title { font-size: 1.45rem; font-weight: 800; color: #1a1730; margin: 0 0 4px; }
+    .job-company { font-size: 1rem; color: #6b7280; margin: 0 0 18px; font-weight: 500; }
+
+    .btn-apply {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 24px; border-radius: 999px; border: none; cursor: pointer;
+      font-size: 0.9rem; font-weight: 700; color: white;
+      background: linear-gradient(135deg, #a855f7 0%, #9333ea 50%, #7c3aed 100%);
+      box-shadow: 0 4px 16px rgba(124,58,237,0.30);
+      transition: transform 0.15s, box-shadow 0.15s;
+      text-decoration: none;
+    }
+    .btn-apply:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,58,237,0.38); }
+    .btn-apply:active { transform: translateY(0); }
+    .btn-apply:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+    /* Meta chips */
+    .meta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .meta-chip {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 10px;
+      background: #f5f3ff; border: 1px solid #ede9fe;
+      font-size: 0.82rem; color: #4c3d8f; font-weight: 500;
+    }
+    .meta-chip svg { color: #7c3aed; flex-shrink: 0; }
+
+    /* Section heading */
+    .section-title {
+      font-size: 1rem; font-weight: 700; color: #1a1730;
+      margin: 0 0 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .section-title .icon-wrap {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: #f5f3ff; display: flex; align-items: center; justify-content: center;
+    }
+    .section-title svg { color: #7c3aed; }
+
+    .desc-text { font-size: 0.9rem; color: #4b5563; line-height: 1.75; white-space: pre-line; }
+
+    /* Requirements list */
+    .req-list { list-style: none; padding: 0; margin: 0; }
+    .req-list li {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 0.9rem; color: #374151; padding: 5px 0;
+    }
+    .req-list li::before {
+      content: '';
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #7c3aed; flex-shrink: 0; margin-top: 7px;
+    }
+
+    /* Skill chips */
+    .chip { display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 13px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; }
+    .chip-purple { background: #f5f3ff; color: #6d28d9; border: 1px solid #ede9fe; }
+    .chip-green  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+    .chip-red    { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+    .chips-wrap  { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    /* Sidebar sticky */
+    .sidebar-sticky { position: sticky; top: 76px; }
+
+    /* Donut */
+    .donut-wrap { position: relative; width: 120px; height: 120px; margin: 0 auto 12px; }
+    .donut-wrap svg { transform: rotate(-90deg); }
+    .donut-label {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .donut-pct { font-size: 1.5rem; font-weight: 800; color: #1a1730; line-height: 1; }
+    .donut-sub { font-size: 0.68rem; color: #9ca3af; font-weight: 500; margin-top: 2px; }
+
+    /* Progress bar */
+    .prog-row { margin-bottom: 14px; }
+    .prog-row:last-child { margin-bottom: 0; }
+    .prog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .prog-label { font-size: 0.82rem; font-weight: 600; color: #374151; }
+    .prog-val { font-size: 0.82rem; font-weight: 700; }
+    .prog-track { height: 7px; background: #f0eeff; border-radius: 999px; overflow: hidden; }
+    .prog-fill { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
+    .prog-green { background: #22c55e; }
+    .prog-yellow { background: #eab308; }
+    .prog-red { background: #f87171; }
+    .prog-purple { background: linear-gradient(90deg, #a855f7, #7c3aed); }
+
+    /* Tips */
+    .tips-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .tip-card {
+      background: #faf8ff; border: 1px solid #ede9fe; border-radius: 10px;
+      padding: 10px 12px; font-size: 0.76rem; color: #4c3d8f; line-height: 1.5;
+    }
+    .tip-card .tip-icon { font-size: 0.9rem; margin-bottom: 4px; }
+
+    /* Divider */
+    .sidebar-divider { height: 1px; background: #f0eeff; margin: 16px 0; }
+
+    /* Match badge */
+    .match-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      font-size: 0.72rem; font-weight: 700; margin-top: 4px;
+    }
+    .badge-excellent { background: #f0fdf4; color: #15803d; }
+    .badge-good      { background: #f5f3ff; color: #6d28d9; }
+    .badge-moderate  { background: #fefce8; color: #a16207; }
+    .badge-low       { background: #fff1f2; color: #be123c; }
+  </style>
 </head>
-<body class="bg-gray-50">
-    {% csrf_token %}
+<body>
+  {% csrf_token %}
 
-    <!-- Header -->
-    <div class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <a href="{% url 'candidate' %}" class="text-gray-600 hover:text-gray-900 flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                    Back to Dashboard
-                </a>
-
-                <div class="flex items-center space-x-4">
-                    {% if user.is_authenticated %}
-                        <span class="text-sm text-gray-600">{{ user.email|default:"Guest User" }}</span>
-                        <a href="{% url 'logout' %}" class="text-gray-600 hover:text-gray-900">Logout</a>
-                    {% else %}
-                        <a href="{% url 'login' %}" class="text-gray-600 hover:text-gray-900">Login</a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="nav-logo"><span>S</span></div>
+      <span class="nav-brand-name">SkillSevak</span>
     </div>
 
-    <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <a href="{% url 'candidate' %}" class="nav-back">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Back to Dashboard
+    </a>
 
-            <!-- Job Overview Card -->
-            <div class="lg:col-span-2">
-                <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-                    <div class="flex justify-between items-start mb-6">
-                        <div>
-                            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ job.title }}</h1>
-                            <p class="text-xl text-gray-600">{{ job.company }}</p>
-                        </div>
-                        <div class="flex space-x-3">
-                            <button onclick="applyJob({{ job.id }})" class="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-2 rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-200 flex items-center" id="applyBtn{{ job.id }}">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                </svg>
-                                {% if has_applied %}Applied{% else %}Apply Now{% endif %}
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Job Info -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        <div class="flex items-center text-gray-600">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                            <div>
-                                <p class="text-sm text-gray-500">Location</p>
-                                <p class="font-medium">{{ job.location }}</p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center text-gray-600">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
-                            <div>
-                                <p class="text-sm text-gray-500">Salary</p>
-                                <p class="font-medium">${{ job.salary_min|floatformat:0 }} - ${{ job.salary_max|floatformat:0 }}</p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center text-gray-600">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <div>
-                                <p class="text-sm text-gray-500">Job Type</p>
-                                <p class="font-medium">{{ job.job_type|title }}</p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center text-gray-600">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                            </svg>
-                            <div>
-                                <p class="text-sm text-gray-500">Experience</p>
-                                <p class="font-medium">
-                                    {% if job.experience_min and job.experience_max and job.experience_max < 99 %}
-                                        {{ job.experience_min }}-{{ job.experience_max }} yrs
-                                    {% elif job.experience_min %}
-                                        {{ job.experience_min }}+ years
-                                    {% else %}
-                                        Any level
-                                    {% endif %}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Job Description -->
-                    <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            Job Description
-                        </h3>
-                        <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ job.description }}</p>
-                    </div>
-
-                    <!-- Requirements -->
-                    {% if job.requirements %}
-                    <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Requirements
-                        </h3>
-                        {% if requirements_list %}
-                            <ul class="list-disc list-inside text-gray-700 space-y-1">
-                                {% for req in requirements_list %}
-                                    <li>{{ req }}</li>
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ job.requirements }}</p>
-                        {% endif %}
-                    </div>
-                    {% endif %}
-
-                    <!-- Skills Required -->
-                    <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                            </svg>
-                            Skills Required
-                        </h3>
-                        {% if skills_required %}
-                        <div class="flex flex-wrap gap-2">
-                            {% for skill in skills_required %}
-                                <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">{{ skill }}</span>
-                            {% endfor %}
-                        </div>
-                        {% else %}
-                            <p class="text-gray-500 italic">No specific skills listed</p>
-                        {% endif %}
-                    </div>
-
-                    <!-- Perks & Benefits -->
-                    {% if job.benefits %}
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path>
-                            </svg>
-                            Perks & Benefits
-                        </h3>
-                        <p class="text-gray-700 whitespace-pre-line">{{ job.benefits }}</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- AI Match Score Panel -->
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-xl shadow-sm p-6 sticky top-8">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-6">AI Match Analysis</h3>
-
-                    <!-- Overall Match -->
-                    <div class="text-center mb-8">
-                        <div class="relative w-32 h-32 mx-auto mb-4">
-                            <svg class="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
-                                <circle cx="60" cy="60" r="50" stroke="#e5e7eb" stroke-width="8" fill="none"></circle>
-                                <circle cx="60" cy="60" r="50"
-                                        stroke="{% if match_score >= 70 %}#22c55e{% elif match_score >= 50 %}#eab308{% else %}#94a3b8{% endif %}"
-                                        stroke-width="8" fill="none"
-                                        stroke-dasharray="{{ match_score|floatformat:0 }} 100"
-                                        stroke-linecap="round"></circle>
-                            </svg>
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <span class="text-2xl font-bold {% if match_score >= 70 %}text-green-600{% elif match_score >= 50 %}text-yellow-600{% else %}text-gray-600{% endif %}">{{ match_score|floatformat:0 }}%</span>
-                            </div>
-                        </div>
-                        <p class="text-lg font-semibold text-gray-900">Overall Match</p>
-                        {% if match_score >= 80 %}
-                            <p class="text-sm text-green-600 mt-2">Excellent match!</p>
-                        {% elif match_score >= 60 %}
-                            <p class="text-sm text-blue-600 mt-2">Good potential</p>
-                        {% elif match_score >= 40 %}
-                            <p class="text-sm text-yellow-600 mt-2">Moderate match</p>
-                        {% else %}
-                            <p class="text-sm text-gray-500 mt-2">Skills gap detected</p>
-                        {% endif %}
-                    </div>
-
-                    <!-- Detailed Scores -->
-                    <div class="space-y-4">
-                        <div>
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-medium text-gray-700">Skills Match</span>
-                                <span class="text-sm font-bold {% if skill_match >= 70 %}text-green-600{% elif skill_match >= 50 %}text-yellow-600{% else %}text-red-500{% endif %}">{{ skill_match|floatformat:0 }}%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="{% if skill_match >= 70 %}bg-green-500{% elif skill_match >= 50 %}bg-yellow-500{% else %}bg-red-400{% endif %} h-2 rounded-full" style="width: {{ skill_match|floatformat:0 }}%"></div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-medium text-gray-700">Experience Match</span>
-                                <span class="text-sm font-bold {% if experience_match >= 70 %}text-green-600{% elif experience_match >= 50 %}text-yellow-600{% else %}text-red-500{% endif %}">{{ experience_match|floatformat:0 }}%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="{% if experience_match >= 70 %}bg-green-500{% elif experience_match >= 50 %}bg-yellow-500{% else %}bg-red-400{% endif %} h-2 rounded-full" style="width: {{ experience_match|floatformat:0 }}%"></div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-medium text-gray-700">Semantic Fit</span>
-                                <span class="text-sm font-bold {% if semantic_match >= 70 %}text-green-600{% elif semantic_match >= 50 %}text-yellow-600{% else %}text-red-500{% endif %}">{{ semantic_match|floatformat:0 }}%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="{% if semantic_match >= 70 %}bg-green-500{% elif semantic_match >= 50 %}bg-yellow-500{% else %}bg-red-400{% endif %} h-2 rounded-full" style="width: {{ semantic_match|floatformat:0 }}%"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Matched Skills -->
-                    {% if matched_skills %}
-                    <div class="mt-6">
-                        <h4 class="text-sm font-semibold text-green-700 mb-2">Your Matching Skills</h4>
-                        <div class="flex flex-wrap gap-1">
-                            {% for skill in matched_skills %}
-                                <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">{{ skill.job_skill }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <!-- Missing Skills -->
-                    {% if missing_skills %}
-                    <div class="mt-4">
-                        <h4 class="text-sm font-semibold text-red-700 mb-2">Skills to Develop</h4>
-                        <div class="flex flex-wrap gap-1">
-                            {% for skill in missing_skills %}
-                                <span class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs">{{ skill.skill }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <!-- Suggestions -->
-                    {% if suggestions %}
-                    <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-                        <h4 class="text-sm font-semibold text-blue-800 mb-2">Tips to Improve</h4>
-                        <ul class="text-xs text-blue-700 space-y-1">
-                            {% for tip in suggestions %}
-                                <li>{{ tip }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+    <div class="nav-right">
+      {% if user.is_authenticated %}
+        <span>{{ user.email|default:"Guest User" }}</span>
+        <a href="{% url 'logout' %}">Logout</a>
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
     </div>
+  </nav>
 
-    <script>
-        function applyJob(jobId) {
-            const button = document.getElementById(`applyBtn${jobId}`);
-            const originalText = button.innerHTML;
+  <!-- Page grid -->
+  <div class="page-grid">
 
-            button.innerHTML = '<svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Applying...';
-            button.disabled = true;
+    <!-- ── Left column ── -->
+    <div class="left-col">
 
-            fetch(`/api/apply-job/${jobId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'Content-Type': 'application/json',
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    button.innerHTML = '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Applied';
-                    button.classList.add('bg-green-500');
-                    button.classList.remove('bg-gradient-to-r', 'from-indigo-500', 'to-purple-500');
-                } else {
-                    button.innerHTML = originalText;
-                    button.disabled = false;
-                    alert(data.error || 'Failed to apply for job');
-                }
-            })
-            .catch(error => {
-                button.innerHTML = originalText;
-                button.disabled = false;
-                alert('An error occurred while applying for the job');
-            });
+      <!-- Job Header Panel -->
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+          <div>
+            <h1 class="job-title">{{ job.title }}</h1>
+            <p class="job-company">{{ job.company }}</p>
+          </div>
+          <button onclick="applyJob({{ job.id }})" class="btn-apply" id="applyBtn{{ job.id }}"
+                  {% if has_applied %}disabled{% endif %}>
+            {% if has_applied %}
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+              Applied
+            {% else %}
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+              </svg>
+              Apply Now
+            {% endif %}
+          </button>
+        </div>
+
+        <!-- Meta row -->
+        <div class="meta-row">
+          <div class="meta-chip">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            {{ job.location }}
+          </div>
+          <div class="meta-chip">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+            </svg>
+            ${{ job.salary_min|floatformat:0 }} – ${{ job.salary_max|floatformat:0 }}
+          </div>
+          <div class="meta-chip">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            {{ job.job_type|title }}
+          </div>
+          <div class="meta-chip">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            {% if job.experience_min and job.experience_max and job.experience_max < 99 %}
+              {{ job.experience_min }}–{{ job.experience_max }} yrs
+            {% elif job.experience_min %}
+              {{ job.experience_min }}+ years
+            {% else %}
+              Any level
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Description Panel -->
+      <div class="panel">
+        <h2 class="section-title">
+          <span class="icon-wrap">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </span>
+          Job Description
+        </h2>
+        <p class="desc-text">{{ job.description }}</p>
+      </div>
+
+      <!-- Requirements Panel -->
+      {% if job.requirements %}
+      <div class="panel">
+        <h2 class="section-title">
+          <span class="icon-wrap">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </span>
+          Requirements
+        </h2>
+        {% if requirements_list %}
+          <ul class="req-list">
+            {% for req in requirements_list %}
+              <li>{{ req }}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="desc-text">{{ job.requirements }}</p>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Skills Panel -->
+      <div class="panel">
+        <h2 class="section-title">
+          <span class="icon-wrap">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+          </span>
+          Skills Required
+        </h2>
+        {% if skills_required %}
+          <div class="chips-wrap">
+            {% for skill in skills_required %}
+              <span class="chip chip-purple">{{ skill }}</span>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p style="font-size:0.85rem;color:#9ca3af;font-style:italic;">No specific skills listed</p>
+        {% endif %}
+      </div>
+
+      <!-- Benefits Panel -->
+      {% if job.benefits %}
+      <div class="panel">
+        <h2 class="section-title">
+          <span class="icon-wrap">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>
+            </svg>
+          </span>
+          Perks &amp; Benefits
+        </h2>
+        <p class="desc-text">{{ job.benefits }}</p>
+      </div>
+      {% endif %}
+
+    </div><!-- /left-col -->
+
+    <!-- ── Right sidebar ── -->
+    <div class="sidebar-col">
+      <div class="sidebar-sticky">
+        <div class="panel" style="padding:28px 24px;">
+
+          <!-- Header -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#a855f7,#7c3aed);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="16" height="16" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+              </svg>
+            </div>
+            <div>
+              <div style="font-size:0.88rem;font-weight:700;color:#1a1730;">AI Match Analysis</div>
+              <div style="font-size:0.72rem;color:#9ca3af;">Powered by SkillSevak ANN</div>
+            </div>
+          </div>
+
+          <!-- Donut chart -->
+          <div style="text-align:center;margin-bottom:20px;">
+            <div class="donut-wrap">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" stroke="#f0eeff" stroke-width="10" fill="none"/>
+                <circle id="donut-fill" cx="60" cy="60" r="50"
+                        stroke="{% if match_score >= 70 %}#7c3aed{% elif match_score >= 50 %}#eab308{% else %}#f87171{% endif %}"
+                        stroke-width="10" fill="none"
+                        stroke-dasharray="0 314.16"
+                        stroke-linecap="round"/>
+              </svg>
+              <div class="donut-label">
+                <span class="donut-pct">{{ match_score|floatformat:0 }}%</span>
+                <span class="donut-sub">Match</span>
+              </div>
+            </div>
+
+            {% if match_score >= 80 %}
+              <span class="match-badge badge-excellent">Excellent Match</span>
+            {% elif match_score >= 60 %}
+              <span class="match-badge badge-good">Good Potential</span>
+            {% elif match_score >= 40 %}
+              <span class="match-badge badge-moderate">Moderate Match</span>
+            {% else %}
+              <span class="match-badge badge-low">Skills Gap</span>
+            {% endif %}
+          </div>
+
+          <div class="sidebar-divider"></div>
+
+          <!-- Progress bars -->
+          <div style="margin-bottom:4px;">
+            <!-- Skills Match -->
+            <div class="prog-row">
+              <div class="prog-header">
+                <span class="prog-label">Skills Match</span>
+                <span class="prog-val" style="color:{% if skill_match >= 70 %}#22c55e{% elif skill_match >= 50 %}#eab308{% else %}#f87171{% endif %};">{{ skill_match|floatformat:0 }}%</span>
+              </div>
+              <div class="prog-track">
+                <div class="prog-fill {% if skill_match >= 70 %}prog-green{% elif skill_match >= 50 %}prog-yellow{% else %}prog-red{% endif %}"
+                     style="width:{{ skill_match|floatformat:0 }}%;"></div>
+              </div>
+            </div>
+
+            <!-- Experience Match -->
+            <div class="prog-row">
+              <div class="prog-header">
+                <span class="prog-label">Experience</span>
+                <span class="prog-val" style="color:{% if experience_match >= 70 %}#22c55e{% elif experience_match >= 50 %}#eab308{% else %}#f87171{% endif %};">{{ experience_match|floatformat:0 }}%</span>
+              </div>
+              <div class="prog-track">
+                <div class="prog-fill {% if experience_match >= 70 %}prog-green{% elif experience_match >= 50 %}prog-yellow{% else %}prog-red{% endif %}"
+                     style="width:{{ experience_match|floatformat:0 }}%;"></div>
+              </div>
+            </div>
+
+            <!-- Semantic Match -->
+            <div class="prog-row">
+              <div class="prog-header">
+                <span class="prog-label">Semantic Fit</span>
+                <span class="prog-val" style="color:{% if semantic_match >= 70 %}#22c55e{% elif semantic_match >= 50 %}#eab308{% else %}#f87171{% endif %};">{{ semantic_match|floatformat:0 }}%</span>
+              </div>
+              <div class="prog-track">
+                <div class="prog-fill {% if semantic_match >= 70 %}prog-green{% elif semantic_match >= 50 %}prog-yellow{% else %}prog-red{% endif %}"
+                     style="width:{{ semantic_match|floatformat:0 }}%;"></div>
+              </div>
+            </div>
+          </div>
+
+          {% if matched_skills or missing_skills %}
+          <div class="sidebar-divider"></div>
+          {% endif %}
+
+          <!-- Matching skills -->
+          {% if matched_skills %}
+          <div style="margin-bottom:14px;">
+            <div style="font-size:0.8rem;font-weight:700;color:#15803d;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+              Matching Skills
+            </div>
+            <div class="chips-wrap">
+              {% for skill in matched_skills %}
+                <span class="chip chip-green">{{ skill.job_skill }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Missing skills -->
+          {% if missing_skills %}
+          <div style="margin-bottom:4px;">
+            <div style="font-size:0.8rem;font-weight:700;color:#be123c;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+              </svg>
+              Skills to Develop
+            </div>
+            <div class="chips-wrap">
+              {% for skill in missing_skills %}
+                <span class="chip chip-red">{{ skill.skill }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Tips to Improve -->
+          {% if suggestions %}
+          <div class="sidebar-divider"></div>
+          <div>
+            <div style="font-size:0.8rem;font-weight:700;color:#1a1730;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+              <svg width="12" height="12" fill="none" stroke="#7c3aed" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+              Tips to Improve
+            </div>
+            <div class="tips-grid">
+              {% for tip in suggestions %}
+              <div class="tip-card">
+                <div class="tip-icon">💡</div>
+                {{ tip }}
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+        </div><!-- /panel -->
+      </div><!-- /sidebar-sticky -->
+    </div><!-- /sidebar-col -->
+
+  </div><!-- /page-grid -->
+
+  <script>
+    function applyJob(jobId) {
+      const button = document.getElementById(`applyBtn${jobId}`);
+      const originalHTML = button.innerHTML;
+
+      button.innerHTML = `<svg class="animate-spin" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Applying...`;
+      button.disabled = true;
+
+      fetch(`/api/apply-job/${jobId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          button.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Applied`;
+          button.style.background = 'linear-gradient(135deg,#22c55e,#16a34a)';
+        } else {
+          button.innerHTML = originalHTML;
+          button.disabled = false;
+          alert(data.error || 'Failed to apply for job');
         }
-    </script>
+      })
+      .catch(() => {
+        button.innerHTML = originalHTML;
+        button.disabled = false;
+        alert('An error occurred while applying for the job');
+      });
+    }
+
+    /* Animate donut on load */
+    document.addEventListener('DOMContentLoaded', () => {
+      const fill = document.getElementById('donut-fill');
+      if (fill) {
+        const circum = 2 * Math.PI * 50;
+        const score = {{ match_score|floatformat:0 }};
+        fill.style.transition = 'stroke-dasharray 0.8s ease';
+        fill.style.strokeDasharray = `${(score / 100) * circum} ${circum}`;
+      }
+    });
+  </script>
 </body>
 </html>

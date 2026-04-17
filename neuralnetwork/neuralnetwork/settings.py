@@ -33,6 +33,14 @@ ALLOWED_HOSTS = config(
     cast=Csv()
 )
 
+# CSRF: Django 4.0+ requires full origin in CSRF_TRUSTED_ORIGINS
+# ALLOWED_HOSTS alone is not enough — Origin header is checked separately
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='http://127.0.0.1:8000,http://localhost:8000',
+    cast=Csv()
+)
+
 # =============================================================================
 # APPLICATION DEFINITION
 # =============================================================================
@@ -73,7 +81,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    'ann.middleware.LocalhostCsrfMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

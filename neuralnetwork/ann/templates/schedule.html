@@ -3,160 +3,401 @@
 {% block title %}Schedule · SkillSevak{% endblock %}
 
 {% block content %}
-  <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold text-slate-800 flex items-center gap-3">
-          <span class="w-8 h-8 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg font-semibold">📅</span>
-          Interview Schedule
-        </h1>
-        <p class="text-slate-500 mt-1">Manage all your interviews in one place</p>
-      </div>
-      <a href="{% url 'interview_create' %}"
-         class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-indigo-700 hover:to-indigo-800">
-        <span class="mr-2 text-base leading-none">＋</span>
-        Schedule Interview
-      </a>
-    </div>
+<div class="space-y-6">
 
-    <div class="grid lg:grid-cols-[400px_1fr] gap-6">
-      <!-- Calendar / Upcoming -->
-      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6">
-        <form method="get">
-          <label class="block text-xs font-medium text-slate-500 mb-1">
-            Select day
-          </label>
-          <input type="date"
-                 name="date"
-                 value="{{ selected_date|date:'Y-m-d' }}"
-                 class="w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-slate-800">Interview Schedule</h1>
+      <p class="text-slate-500 mt-1">Manage all your interviews in one place</p>
+    </div>
+    <button type="button" onclick="openScheduleModal()"
+            class="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors">
+      <span class="text-base leading-none">＋</span>
+      Schedule Interview
+    </button>
+  </div>
+
+  <div class="grid lg:grid-cols-[340px_1fr] gap-6 items-start">
+
+    <!-- ── Left column ── -->
+    <div class="space-y-5">
+
+      <!-- Calendar card -->
+      <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-5">
+
+        <!-- Hidden form for date filtering -->
+        <form method="get" id="date-form">
+          <input type="hidden" name="date" id="date-hidden" value="{{ selected_date|date:'Y-m-d' }}" />
         </form>
 
-        <div class="mt-6 pt-6 border-t border-slate-200">
-          <h3 class="font-semibold text-slate-800 mb-3">Upcoming Interviews</h3>
-          <div class="space-y-2">
-            {% for interview in upcoming_interviews %}
-              <div class="text-sm p-2 bg-slate-50 rounded-lg">
-                <div class="font-medium text-slate-700">
-                  {{ interview.candidate_name|default:"Unknown" }}
-                </div>
-                <div class="text-xs text-slate-500">
-                  {{ interview.scheduled_date|date:"M j, g:i a" }}
-                </div>
-              </div>
-            {% empty %}
-              <p class="text-xs text-slate-400">No upcoming interviews</p>
-            {% endfor %}
+        <!-- Month nav -->
+        <div class="flex items-center justify-between mb-4">
+          <p class="font-bold text-slate-800 text-sm" id="cal-label"></p>
+          <div class="flex gap-1.5">
+            <button type="button" onclick="calPrev()"
+                    class="w-7 h-7 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 flex items-center justify-center text-sm transition-colors">
+              ‹
+            </button>
+            <button type="button" onclick="calNext()"
+                    class="w-7 h-7 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 flex items-center justify-center text-sm transition-colors">
+              ›
+            </button>
           </div>
+        </div>
+
+        <!-- Calendar grid -->
+        <table class="w-full" style="border-collapse:separate; border-spacing:2px;">
+          <thead><tr id="cal-head"></tr></thead>
+          <tbody id="cal-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Upcoming Interviews card -->
+      <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-5">
+        <p class="font-bold text-slate-800 text-sm mb-3">Upcoming Interviews</p>
+        <div class="space-y-2">
+          {% for interview in upcoming_interviews %}
+          <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:border-indigo-100 border border-transparent transition-colors cursor-default">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+              {{ interview.candidate_name|default:"?"|slice:":1"|upper }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-semibold text-slate-800 truncate">{{ interview.candidate_name|default:"Unknown" }}</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">{{ interview.scheduled_date|date:"M j · g:i a" }}</p>
+            </div>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 flex-shrink-0">
+              {{ interview.interview_type|default:"interview"|cut:"_"|title }}
+            </span>
+          </div>
+          {% empty %}
+          <div class="py-6 text-center">
+            <p class="text-xs text-slate-400">No upcoming interviews in the next 7 days</p>
+          </div>
+          {% endfor %}
         </div>
       </div>
 
-      <!-- Selected day schedule -->
-      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6">
-        <h2 class="text-xl font-bold text-slate-800 mb-6">
-          {{ selected_date|date:"l, F j, Y" }}
-        </h2>
+    </div>
 
-        {% if day_interviews|length == 0 %}
-          <div class="text-center py-12">
-            <div class="w-16 h-16 rounded-2xl bg-slate-50 text-slate-300 flex items-center justify-center mx-auto mb-4 text-3xl">
-              📅
-            </div>
-            <p class="text-slate-500">No interviews scheduled for this day</p>
+    <!-- ── Right column: Interviews for Selected Day ── -->
+    <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 min-h-[480px] flex flex-col">
+
+      <div class="mb-5">
+        <h2 class="text-lg font-bold text-slate-800">{{ selected_date|date:"l, F j, Y" }}</h2>
+        <p class="text-xs text-slate-400 mt-0.5">
+          {% if day_interviews %}
+            {{ day_interviews|length }} interview{{ day_interviews|length|pluralize }} scheduled
+          {% else %}
+            No interviews scheduled
+          {% endif %}
+        </p>
+      </div>
+
+      {% if not day_interviews %}
+        <!-- Empty state -->
+        <div class="flex-1 flex flex-col items-center justify-center text-center py-8">
+          <div class="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center mb-4 relative">
+            <span class="text-2xl">📅</span>
+            <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center text-white" style="font-size:10px;">✦</span>
           </div>
-        {% else %}
-          <div class="space-y-4">
-            {% for interview in day_interviews %}
-              <div class="border-l-4 border-indigo-500 bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all">
-                <div class="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 class="font-semibold text-slate-800 text-lg">
-                      {{ interview.candidate_name|default:"Unknown Candidate" }}
-                    </h3>
-                    <p class="text-sm text-slate-600">
-                      {{ interview.job_title|default:"Unknown Position" }}
-                    </p>
-                  </div>
-                  <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold
-                               {% if interview.status == 'scheduled' %}bg-blue-100 text-blue-700 border-blue-200
-                               {% elif interview.status == 'completed' %}bg-emerald-100 text-emerald-700 border-emerald-200
-                               {% elif interview.status == 'cancelled' %}bg-rose-100 text-rose-700 border-rose-200
-                               {% elif interview.status == 'rescheduled' %}bg-amber-100 text-amber-700 border-amber-200
-                               {% else %}bg-slate-100 text-slate-700 border-slate-200{% endif %}">
-                    {{ interview.status }}
-                  </span>
-                </div>
+          <p class="font-semibold text-slate-700 text-sm">No interviews for this day</p>
+          <p class="text-xs text-slate-400 mt-1.5 max-w-xs">Schedule an interview to keep your hiring moving.</p>
+        </div>
 
-                <div class="grid grid-cols-2 gap-3 text-sm">
-                  <div class="flex items-center gap-2 text-slate-600">
-                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-md bg-purple-100 text-[10px] font-semibold text-purple-600">⏱</span>
-                    {{ interview.scheduled_date|date:"g:i a" }}
-                    <span class="text-slate-400">
-                      ({{ interview.duration_minutes }} min)
-                    </span>
-                  </div>
-                  <div class="flex items-center gap-2 text-slate-600">
-                    <span class="font-medium
-                                 {% if interview.interview_type == 'phone_screen' %}text-purple-600
-                                 {% elif interview.interview_type == 'technical' %}text-indigo-600
-                                 {% elif interview.interview_type == 'behavioral' %}text-teal-600
-                                 {% elif interview.interview_type == 'culture_fit' %}text-pink-600
-                                 {% elif interview.interview_type == 'final_round' %}text-emerald-600
-                                 {% else %}text-slate-600{% endif %}">
-                      {{ interview.interview_type|default:"interview"|cut:"_"|title }}
-                    </span>
-                  </div>
-
-                  {% if interview.meeting_link %}
-                    <div class="flex items-center gap-2 text-blue-600">
-                      <span class="inline-flex h-5 w-5 items-center justify-center rounded-md bg-blue-50 text-[10px] font-semibold">🎥</span>
-                      <a href="{{ interview.meeting_link }}" target="_blank" rel="noopener" class="hover:underline">
-                        Join Meeting
-                      </a>
-                    </div>
-                  {% endif %}
-
-                  {% if interview.location %}
-                    <div class="flex items-center gap-2 text-slate-600">
-                      <span class="inline-flex h-5 w-5 items-center justify-center rounded-md bg-slate-100 text-[10px] font-semibold">📍</span>
-                      {{ interview.location }}
-                    </div>
-                  {% endif %}
-                </div>
-
-                {% if interview.interviewer %}
-                  <div class="mt-3 pt-3 border-t border-slate-100 text-sm">
-                    <span class="text-xs text-slate-500">Interviewer: </span>
-                    <span class="font-medium text-slate-700">{{ interview.interviewer }}</span>
-                  </div>
-                {% endif %}
-
-                {% if interview.status == 'scheduled' %}
-                  <div class="mt-3 pt-3 border-t border-slate-100 flex gap-2">
-                    <button
-                      onclick="updateInterviewStatus({{ interview.id }}, 'completed', this)"
-                      class="text-xs px-3 py-1 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-medium transition-colors">
-                      Mark Complete
-                    </button>
-                    <button
-                      onclick="updateInterviewStatus({{ interview.id }}, 'cancelled', this)"
-                      class="text-xs px-3 py-1 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 font-medium transition-colors">
-                      Cancel
-                    </button>
-                  </div>
-                {% endif %}
+      {% else %}
+        <div class="space-y-4">
+          {% for interview in day_interviews %}
+          <div class="border-l-4 border-indigo-500 bg-slate-50/70 rounded-xl p-4 shadow-sm hover:shadow-md transition-all">
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <h3 class="font-semibold text-slate-800 text-base">
+                  {{ interview.candidate_name|default:"Unknown Candidate" }}
+                </h3>
+                <p class="text-sm text-slate-500 mt-0.5">
+                  {{ interview.job_title|default:"Unknown Position" }}
+                </p>
               </div>
-            {% endfor %}
+              <span class="status-badge inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold
+                           {% if interview.status == 'scheduled' %}bg-blue-100 text-blue-700 border-blue-200
+                           {% elif interview.status == 'completed' %}bg-emerald-100 text-emerald-700 border-emerald-200
+                           {% elif interview.status == 'cancelled' %}bg-rose-100 text-rose-700 border-rose-200
+                           {% elif interview.status == 'rescheduled' %}bg-amber-100 text-amber-700 border-amber-200
+                           {% else %}bg-slate-100 text-slate-700 border-slate-200{% endif %}">
+                {{ interview.status }}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <div class="flex items-center gap-2 text-slate-600">
+                <span class="inline-flex h-5 w-5 items-center justify-center rounded-md bg-purple-100 text-[10px] font-semibold text-purple-600">⏱</span>
+                {{ interview.scheduled_date|date:"g:i a" }}
+                <span class="text-slate-400">({{ interview.duration_minutes }} min)</span>
+              </div>
+              <div class="flex items-center gap-2 text-slate-600">
+                <span class="font-medium
+                             {% if interview.interview_type == 'phone_screen' %}text-purple-600
+                             {% elif interview.interview_type == 'technical' %}text-indigo-600
+                             {% elif interview.interview_type == 'behavioral' %}text-teal-600
+                             {% elif interview.interview_type == 'culture_fit' %}text-pink-600
+                             {% elif interview.interview_type == 'final_round' %}text-emerald-600
+                             {% else %}text-slate-600{% endif %}">
+                  {{ interview.interview_type|default:"interview"|cut:"_"|title }}
+                </span>
+              </div>
+
+              {% if interview.meeting_link %}
+              <div class="flex items-center gap-2 text-blue-600">
+                <span class="inline-flex h-5 w-5 items-center justify-center rounded-md bg-blue-50 text-[10px] font-semibold">🎥</span>
+                <a href="{{ interview.meeting_link }}" target="_blank" rel="noopener" class="hover:underline">
+                  Join Meeting
+                </a>
+              </div>
+              {% endif %}
+
+              {% if interview.location %}
+              <div class="flex items-center gap-2 text-slate-600">
+                <span class="inline-flex h-5 w-5 items-center justify-center rounded-md bg-slate-100 text-[10px] font-semibold">📍</span>
+                {{ interview.location }}
+              </div>
+              {% endif %}
+            </div>
+
+            {% if interview.interviewer %}
+            <div class="mt-3 pt-3 border-t border-slate-100 text-sm">
+              <span class="text-xs text-slate-400">Interviewer: </span>
+              <span class="font-medium text-slate-700">{{ interview.interviewer }}</span>
+            </div>
+            {% endif %}
+
+            {% if interview.status == 'scheduled' %}
+            <div class="mt-3 pt-3 border-t border-slate-100 flex gap-2">
+              <button onclick="updateInterviewStatus({{ interview.id }}, 'completed', this)"
+                      class="text-xs px-3 py-1 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-medium transition-colors">
+                Mark Complete
+              </button>
+              <button onclick="updateInterviewStatus({{ interview.id }}, 'cancelled', this)"
+                      class="text-xs px-3 py-1 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 font-medium transition-colors">
+                Cancel
+              </button>
+            </div>
+            {% endif %}
+
           </div>
-        {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+
+    </div><!-- /right column -->
+  </div>
+</div>
+
+<!-- ── 2-step Schedule Interview Modal ── -->
+<div id="schedule-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-xl border border-slate-200/60 w-full max-w-sm mx-4 overflow-hidden">
+
+    <!-- Modal header -->
+    <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100">
+      <div>
+        <h2 class="font-bold text-slate-800 text-base" id="modal-title">Select a Job</h2>
+        <p class="text-xs text-slate-400 mt-0.5" id="modal-sub">Step 1 of 2</p>
+      </div>
+      <button type="button" onclick="closeScheduleModal()"
+              class="w-8 h-8 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center text-sm transition-colors">
+        ✕
+      </button>
+    </div>
+
+    <!-- Step 1: Job -->
+    <div id="modal-step-1" class="px-6 py-5">
+      <label class="block text-xs font-semibold text-slate-600 mb-2">Which job is this interview for?</label>
+      <select id="modal-job"
+              class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400">
+        <option value="">— Select a job —</option>
+      </select>
+      <div class="flex justify-end mt-5">
+        <button type="button" onclick="modalNext()"
+                class="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors">
+          Next →
+        </button>
       </div>
     </div>
+
+    <!-- Step 2: Candidate (hidden initially) -->
+    <div id="modal-step-2" class="px-6 py-5 hidden">
+      <label class="block text-xs font-semibold text-slate-600 mb-2">Select the candidate</label>
+      <select id="modal-candidate"
+              class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400">
+        <option value="">— Select a candidate —</option>
+      </select>
+      <div class="flex items-center justify-between mt-5">
+        <button type="button" onclick="modalBack()"
+                class="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+          ← Back
+        </button>
+        <button type="button" onclick="modalConfirm()"
+                class="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors">
+          Continue to Details
+        </button>
+      </div>
+    </div>
+
   </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+/* ── Calendar ── */
+const MONTHS_S = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS     = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+// Parse selected date from Django (always a valid Y-m-d string)
+const _sel  = '{{ selected_date|date:"Y-m-d" }}'.split('-');
+let selYear = parseInt(_sel[0]);
+let selMonth= parseInt(_sel[1]) - 1;
+let selDay  = parseInt(_sel[2]);
+
+const _now  = new Date();
+const todayY= _now.getFullYear();
+const todayM= _now.getMonth();
+const todayD= _now.getDate();
+
+// Calendar starts at the selected month
+let calDate = new Date(selYear, selMonth, 1);
+
+function buildCal() {
+  const y = calDate.getFullYear();
+  const m = calDate.getMonth();
+  document.getElementById('cal-label').textContent = MONTHS_S[m] + ' ' + y;
+
+  // Day headers
+  document.getElementById('cal-head').innerHTML = DAYS.map(d =>
+    `<th style="text-align:center;padding:3px 0;font-size:0.62rem;font-weight:600;color:#6366f1;">${d}</th>`
+  ).join('');
+
+  const first = new Date(y, m, 1).getDay();
+  const total = new Date(y, m + 1, 0).getDate();
+  let html = '';
+  let day   = 1 - first;
+
+  for (let r = 0; r < 6; r++) {
+    html += '<tr>';
+    for (let c = 0; c < 7; c++, day++) {
+      if (day < 1 || day > total) {
+        html += '<td></td>';
+      } else {
+        const isToday = (y === todayY && m === todayM && day === todayD);
+        const isSel   = (y === selYear && m === selMonth && day === selDay && !isToday);
+
+        let style = 'width:30px;height:30px;border-radius:999px;display:flex;align-items:center;justify-content:center;margin:auto;font-size:0.72rem;font-weight:500;cursor:pointer;transition:background 0.12s,color 0.12s;user-select:none;';
+
+        if (isToday) {
+          style += 'background:#4f46e5;color:white;font-weight:700;';
+        } else if (isSel) {
+          style += 'background:#e0e7ff;color:#4338ca;font-weight:700;outline:1.5px solid #818cf8;outline-offset:1px;';
+        } else {
+          style += 'color:#374151;';
+        }
+
+        const hover = (!isToday && !isSel)
+          ? `onmouseenter="this.style.background='#eef2ff';this.style.color='#4338ca';" onmouseleave="this.style.background='';this.style.color='#374151';"`
+          : '';
+
+        html += `<td style="text-align:center;padding:2px;">
+          <div style="${style}" onclick="pickDay(${y},${m},${day})" ${hover}>${day}</div>
+        </td>`;
+      }
+    }
+    html += '</tr>';
+    if (day > total) break;
+  }
+  document.getElementById('cal-body').innerHTML = html;
+}
+
+function pickDay(y, m, d) {
+  selYear = y; selMonth = m; selDay = d;
+  const mm = String(m + 1).padStart(2, '0');
+  const dd = String(d).padStart(2, '0');
+  document.getElementById('date-hidden').value = `${y}-${mm}-${dd}`;
+  document.getElementById('date-form').submit();
+}
+
+function calPrev() { calDate.setMonth(calDate.getMonth() - 1); buildCal(); }
+function calNext() { calDate.setMonth(calDate.getMonth() + 1); buildCal(); }
+
+buildCal();
+
+
+/* ── 2-step Schedule Interview Modal ── */
+const JOBS = {{ jobs_json|safe }};
+const APPS = {{ apps_json|safe }};
+
+function openScheduleModal() {
+  // Reset to step 1
+  const jobSel = document.getElementById('modal-job');
+  jobSel.innerHTML = '<option value="">— Select a job —</option>';
+  JOBS.forEach(j => {
+    const o = document.createElement('option');
+    o.value = j.id; o.textContent = j.title;
+    jobSel.appendChild(o);
+  });
+  document.getElementById('modal-candidate').innerHTML = '<option value="">— Select a candidate —</option>';
+  document.getElementById('modal-step-1').classList.remove('hidden');
+  document.getElementById('modal-step-2').classList.add('hidden');
+  document.getElementById('modal-title').textContent = 'Select a Job';
+  document.getElementById('modal-sub').textContent = 'Step 1 of 2';
+  document.getElementById('schedule-modal').classList.remove('hidden');
+}
+
+function closeScheduleModal() {
+  document.getElementById('schedule-modal').classList.add('hidden');
+}
+
+function modalNext() {
+  const jobId = parseInt(document.getElementById('modal-job').value);
+  if (!jobId) { alert('Please select a job first.'); return; }
+
+  const candidates = APPS.filter(a => a.job_id === jobId);
+  const candSel = document.getElementById('modal-candidate');
+  candSel.innerHTML = '<option value="">— Select a candidate —</option>';
+  if (candidates.length === 0) {
+    candSel.innerHTML = '<option value="" disabled>No applicants for this job</option>';
+  } else {
+    candidates.forEach(a => {
+      const o = document.createElement('option');
+      o.value = a.id; o.textContent = a.name;
+      candSel.appendChild(o);
+    });
+  }
+
+  document.getElementById('modal-step-1').classList.add('hidden');
+  document.getElementById('modal-step-2').classList.remove('hidden');
+  document.getElementById('modal-title').textContent = 'Select Candidate';
+  document.getElementById('modal-sub').textContent = 'Step 2 of 2';
+}
+
+function modalBack() {
+  document.getElementById('modal-step-2').classList.add('hidden');
+  document.getElementById('modal-step-1').classList.remove('hidden');
+  document.getElementById('modal-title').textContent = 'Select a Job';
+  document.getElementById('modal-sub').textContent = 'Step 1 of 2';
+}
+
+function modalConfirm() {
+  const appId = document.getElementById('modal-candidate').value;
+  if (!appId) { alert('Please select a candidate.'); return; }
+  window.location.href = '{% url "interview_create" %}?application_id=' + appId;
+}
+
+// Close on backdrop click
+document.getElementById('schedule-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeScheduleModal();
+});
+
+
+/* ── Interview status update (unchanged) ── */
 function updateInterviewStatus(interviewId, newStatus, btn) {
   const card = btn.closest('.border-l-4');
   fetch(`/recruiter/interviews/${interviewId}/update-status/`, {
@@ -170,18 +411,15 @@ function updateInterviewStatus(interviewId, newStatus, btn) {
   .then(r => r.json())
   .then(data => {
     if (data.success) {
-      // Update status badge
-      const badge = card.querySelector('.inline-flex.items-center.rounded-full');
+      const badge = card.querySelector('.status-badge');
       if (badge) {
-        const labels = { completed: 'completed', cancelled: 'cancelled' };
         const colors = {
           completed: 'bg-emerald-100 text-emerald-700 border-emerald-200',
           cancelled:  'bg-rose-100 text-rose-700 border-rose-200',
         };
-        badge.className = `inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${colors[newStatus] || ''}`;
+        badge.className = `status-badge inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${colors[newStatus] || ''}`;
         badge.textContent = newStatus;
       }
-      // Remove action buttons
       btn.closest('.flex.gap-2')?.remove();
     }
   })

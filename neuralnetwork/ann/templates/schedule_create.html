@@ -125,3 +125,14 @@
     </div>
   </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+  // Pre-select application if passed from the 2-step modal
+  const preselect = new URLSearchParams(window.location.search).get('application_id');
+  if (preselect) {
+    const sel = document.getElementById('application_id');
+    if (sel) sel.value = preselect;
+  }
+</script>
+{% endblock %}

@@ -5,34 +5,31 @@
 {% block content %}
 <div class="space-y-5">
 
-  <!-- Header + stats bar -->
+  <!-- Header + stats -->
   <div class="flex flex-wrap items-center justify-between gap-4">
     <div>
       <h1 class="text-3xl font-bold text-slate-800">Hiring Pipeline</h1>
       <p class="text-slate-500 mt-1">Drag candidates between stages to update their status</p>
     </div>
-    <div class="flex items-center gap-3">
-      <div class="rounded-xl border border-slate-200 bg-white/80 px-4 py-2 text-center shadow-sm">
-        <div class="text-2xl font-bold text-slate-800">{{ total_applications }}</div>
-        <div class="text-xs text-slate-500">Total</div>
+    <div class="flex items-center gap-2">
+      <div class="border border-slate-200 rounded-full px-4 py-1.5 text-sm font-semibold bg-white shadow-sm">
+        <span class="text-slate-400 font-normal text-xs mr-1">Total</span>{{ total_applications }}
       </div>
-      <div class="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-center shadow-sm">
-        <div class="text-2xl font-bold text-indigo-700">{{ active_count }}</div>
-        <div class="text-xs text-indigo-500">Active</div>
+      <div class="border border-indigo-200 rounded-full px-4 py-1.5 text-sm font-semibold bg-white shadow-sm">
+        <span class="text-slate-400 font-normal text-xs mr-1">Active</span><span class="text-indigo-700">{{ active_count }}</span>
       </div>
-      <div class="rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-center shadow-sm">
-        <div class="text-2xl font-bold text-green-700">{{ hired_count }}</div>
-        <div class="text-xs text-green-500">Hired</div>
+      <div class="border border-green-200 rounded-full px-4 py-1.5 text-sm font-semibold bg-white shadow-sm">
+        <span class="text-slate-400 font-normal text-xs mr-1">Hired</span><span class="text-green-700">{{ hired_count }}</span>
       </div>
     </div>
   </div>
 
   <!-- Job filter -->
   <form method="get" class="flex items-center gap-3">
-    <label class="text-sm font-medium text-slate-600 whitespace-nowrap">Filter by job:</label>
+    <label class="text-xs font-medium text-slate-500 whitespace-nowrap">Filter by job:</label>
     <select name="job_id"
             onchange="this.form.submit()"
-            class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-72 max-w-full">
+            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 min-w-[180px] max-w-full">
       <option value="">All Jobs</option>
       {% for job in jobs %}
         <option value="{{ job.id }}" {% if selected_job_id == job.id|stringformat:"s" %}selected{% endif %}>
@@ -46,20 +43,21 @@
   <div class="flex gap-4 overflow-x-auto pb-6">
 
     {% for stage in stages %}
-    <div class="flex-shrink-0 w-72" data-column>
+    <div class="flex-shrink-0 w-72 {{ stage.hdr_bg }} {{ stage.hdr_border }} border rounded-2xl p-4" data-column>
 
       <!-- Column header -->
-      <div class="{{ stage.hdr_bg }} {{ stage.hdr_border }} border-2 rounded-xl px-4 py-3 mb-3 flex items-center justify-between">
-        <span class="font-semibold text-slate-800 text-sm">{{ stage.label }}</span>
-        <span class="{{ stage.badge_bg }} {{ stage.badge_text }} rounded-full px-2 py-0.5 text-xs font-bold" data-count>{{ stage.count }}</span>
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-bold text-sm {{ stage.hdr_text }}">{{ stage.label }}</span>
+        <span class="{{ stage.badge_bg }} {{ stage.badge_text }} rounded-full px-2.5 py-0.5 text-xs font-bold" data-count>{{ stage.count }}</span>
       </div>
+      <div class="h-px bg-slate-200 mb-3 opacity-60"></div>
 
       <!-- Drop zone -->
-      <div class="space-y-3 min-h-[480px] p-2 rounded-xl bg-slate-50/60"
+      <div class="space-y-3 min-h-[460px]"
            data-stage-id="{{ stage.id }}">
 
         {% for card in stage.apps %}
-        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing"
+        <div class="bg-white border border-slate-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing"
              data-app-id="{{ card.app_id }}">
 
           <!-- Avatar + name -->

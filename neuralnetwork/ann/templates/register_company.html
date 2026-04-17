@@ -2,157 +2,212 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register Company - SkillSevak</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register Company · SkillSevak</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: 'Inter', system-ui, sans-serif; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg,
+        #7c3aed 0%, #9333ea 20%, #a855f7 45%,
+        #c084fc 68%, #ddb6fa 82%, #ede9fe 95%, #f3f0ff 100%);
+      overflow: hidden;
+      position: relative;
+      padding: 24px 16px;
+    }
+
+    .bg-card {
+      position: absolute;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.20);
+      border-radius: 14px;
+      backdrop-filter: blur(2px);
+    }
+    .bg-inner {
+      position: absolute;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 8px;
+    }
+    .bg-line {
+      position: absolute;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.20);
+    }
+    .bg-dot-grid {
+      position: absolute;
+      display: grid;
+      grid-template-columns: repeat(3, 8px);
+      gap: 5px;
+    }
+    .bg-dot { width: 7px; height: 7px; border-radius: 3px; background: rgba(255,255,255,0.22); }
+
+    .login-card {
+      position: relative;
+      z-index: 10;
+      background: white;
+      border-radius: 22px;
+      padding: 38px 44px 36px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 24px 80px rgba(100,30,180,0.28), 0 4px 20px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .inp {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      color: #374151;
+      outline: none;
+      transition: border-color 0.18s, box-shadow 0.18s;
+      margin-bottom: 10px;
+    }
+    .inp::placeholder { color: #9ca3af; }
+    .inp:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.10);
+    }
+
+    .btn-signin {
+      width: 100%;
+      padding: 13px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: white;
+      background: linear-gradient(135deg, #a855f7 0%, #9333ea 50%, #7c3aed 100%);
+      box-shadow: 0 4px 18px rgba(168,85,247,0.38), inset 0 1px 0 rgba(255,255,255,0.22);
+      transition: transform 0.15s, box-shadow 0.18s;
+      letter-spacing: 0.01em;
+    }
+    .btn-signin:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 26px rgba(168,85,247,0.46), inset 0 1px 0 rgba(255,255,255,0.22);
+    }
+    .btn-signin:active { transform: translateY(0); }
+  </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
-  
-  <div class="w-full max-w-md">
-    <!-- Back Button -->
-    <a href="{% url 'index' %}" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4">
-      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-      </svg>
-      Back to Home
+<body>
+
+  <!-- Left ghost card -->
+  <div class="bg-card" style="left:3%;top:12%;width:218px;height:298px;">
+    <div class="bg-dot-grid" style="top:14px;left:14px;">
+      <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+      <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+      <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+    </div>
+    <div class="bg-line" style="top:68px;left:14px;width:88px;"></div>
+    <div class="bg-line" style="top:82px;left:14px;width:56px;background:rgba(255,255,255,0.12);"></div>
+    <div class="bg-inner" style="top:104px;left:14px;right:14px;height:50px;">
+      <div style="position:absolute;left:10px;top:10px;width:26px;height:26px;border-radius:999px;background:rgba(255,255,255,0.26);"></div>
+      <div class="bg-line" style="top:14px;left:46px;width:58px;background:rgba(255,255,255,0.22);"></div>
+      <div class="bg-line" style="top:26px;left:46px;width:38px;background:rgba(255,255,255,0.13);"></div>
+    </div>
+    <div class="bg-inner" style="top:164px;left:14px;right:14px;height:50px;">
+      <div style="position:absolute;left:10px;top:10px;width:26px;height:26px;border-radius:999px;background:rgba(255,255,255,0.20);"></div>
+      <div class="bg-line" style="top:14px;left:46px;width:52px;background:rgba(255,255,255,0.18);"></div>
+      <div class="bg-line" style="top:26px;left:46px;width:34px;background:rgba(255,255,255,0.10);"></div>
+    </div>
+    <div class="bg-inner" style="top:224px;left:14px;right:14px;height:50px;">
+      <div style="position:absolute;left:10px;top:10px;width:26px;height:26px;border-radius:999px;background:rgba(255,255,255,0.16);"></div>
+      <div class="bg-line" style="top:14px;left:46px;width:62px;background:rgba(255,255,255,0.16);"></div>
+      <div class="bg-line" style="top:26px;left:46px;width:40px;background:rgba(255,255,255,0.10);"></div>
+    </div>
+  </div>
+
+  <div class="bg-dot-grid" style="position:absolute;left:7%;top:14%;">
+    <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+    <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+    <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+  </div>
+
+  <div style="position:absolute;left:9%;bottom:14%;width:52px;height:52px;border-radius:999px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;">
+    <div style="width:26px;height:26px;border-radius:999px;border:2px solid rgba(255,255,255,0.40);display:flex;align-items:center;justify-content:center;">
+      <div style="width:10px;height:10px;border-radius:999px;background:rgba(255,255,255,0.50);"></div>
+    </div>
+  </div>
+
+  <!-- Right ghost card -->
+  <div class="bg-card" style="right:2%;top:8%;width:228px;height:318px;">
+    <div class="bg-line" style="top:16px;left:14px;width:100px;"></div>
+    <div class="bg-line" style="top:30px;left:14px;width:58px;background:rgba(255,255,255,0.11);"></div>
+    <div class="bg-inner" style="top:56px;left:14px;right:14px;height:38px;"></div>
+    <div class="bg-inner" style="top:103px;left:14px;right:14px;height:38px;"></div>
+    <div class="bg-inner" style="top:150px;left:14px;right:14px;height:38px;"></div>
+    <div class="bg-inner" style="top:197px;left:14px;right:14px;height:38px;"></div>
+    <div style="position:absolute;bottom:14px;right:14px;width:14px;height:14px;border-radius:999px;background:rgba(255,255,255,0.26);"></div>
+  </div>
+
+  <div class="bg-card" style="right:4%;bottom:12%;width:190px;height:118px;">
+    <div class="bg-line" style="top:16px;left:14px;width:78px;"></div>
+    <div class="bg-line" style="top:30px;left:14px;width:48px;background:rgba(255,255,255,0.11);"></div>
+    <div style="position:absolute;bottom:14px;left:14px;right:14px;height:36px;background:rgba(255,255,255,0.12);border-radius:7px;"></div>
+  </div>
+
+  <div class="bg-dot-grid" style="position:absolute;right:8%;top:18%;">
+    <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+    <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+    <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+  </div>
+
+  <!-- ── Register Card ── -->
+  <div class="login-card">
+
+    <p style="font-size:0.88rem;font-weight:700;color:#1a1730;margin-bottom:6px;text-align:center;">SkillSevak</p>
+    <h1 style="font-size:1.55rem;font-weight:800;color:#1a1730;text-align:center;margin-bottom:6px;letter-spacing:-0.02em;">Create Company Account</h1>
+    <p style="font-size:0.82rem;color:#9ca3af;text-align:center;margin-bottom:22px;">Start hiring top talent today</p>
+
+    <!-- Django messages -->
+    {% if messages %}
+    <div style="width:100%;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;">
+      {% for message in messages %}
+      <div style="padding:12px 14px;border-radius:10px;font-size:0.82rem;
+                  {% if message.tags == 'error' %}background:#fff1f2;border:1px solid #fecdd3;color:#be123c;
+                  {% else %}background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;{% endif %}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{% url 'register_company' %}" style="width:100%;">
+      {% csrf_token %}
+
+      <input class="inp" type="text"     id="company_name" name="company_name" placeholder="Company Name"           required />
+      <input class="inp" type="email"    id="email"        name="email"        placeholder="Email"                  required />
+      <input class="inp" type="text"     id="industry"     name="industry"     placeholder="Industry (e.g. Tech, Healthcare)" />
+      <input class="inp" type="password" id="password"     name="password"     placeholder="Password"               required style="margin-bottom:18px;" />
+
+      <button type="submit" class="btn-signin">Create Company Account</button>
+    </form>
+
+    <p style="margin-top:18px;font-size:0.8rem;color:#6b7280;text-align:center;">
+      Already have an account?
+      <a href="{% url 'login' %}" style="color:#7c3aed;font-weight:600;text-decoration:none;">Log in</a>
+    </p>
+
+    <a href="{% url 'index' %}"
+       style="margin-top:14px;font-size:0.78rem;color:#9ca3af;text-decoration:none;display:flex;align-items:center;gap:4px;transition:color 0.15s;"
+       onmouseover="this.style.color='#6b7280'" onmouseout="this.style.color='#9ca3af'">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+      Back to home
     </a>
 
-    <!-- Registration Card -->
-    <div class="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
-      
-      <!-- Header -->
-      <div class="text-center mb-8">
-        <div class="inline-flex items-center gap-3 mb-4">
-          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
-            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-            </svg>
-          </div>
-          <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            SkillSevak
-          </h1>
-        </div>
-        <h2 class="text-xl font-semibold text-gray-900 mb-2">Create Company Account</h2>
-        <p class="text-gray-600">Start hiring top talent today</p>
-      </div>
-
-      <!-- Error/Success Messages -->
-      {% if messages %}
-        <div class="mb-6 space-y-2">
-          {% for message in messages %}
-            <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-50 border border-red-200 text-red-800{% elif message.tags == 'success' %}bg-green-50 border border-green-200 text-green-800{% else %}bg-blue-50 border border-blue-200 text-blue-800{% endif %}">
-              <div class="flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  {% if message.tags == 'error' %}
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                  {% else %}
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                  {% endif %}
-                </svg>
-                {{ message }}
-              </div>
-            </div>
-          {% endfor %}
-        </div>
-      {% endif %}
-
-      <!-- Registration Form -->
-      <form method="POST" action="{% url 'register_company' %}" class="space-y-5">
-        {% csrf_token %}
-        
-        <!-- Company Name -->
-        <div>
-          <label for="company_name" class="block text-sm font-medium text-gray-700 mb-2">
-            Company Name <span class="text-red-500">*</span>
-          </label>
-          <input 
-            type="text" 
-            id="company_name"
-            name="company_name" 
-            required
-            placeholder="Enter your company name"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-          />
-        </div>
-
-        <!-- Email -->
-        <div>
-          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-            Email Address <span class="text-red-500">*</span>
-          </label>
-          <input 
-            type="email" 
-            id="email"
-            name="email" 
-            required
-            placeholder="company@example.com"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-          />
-        </div>
-
-        <!-- Industry -->
-        <div>
-          <label for="industry" class="block text-sm font-medium text-gray-700 mb-2">
-            Industry
-          </label>
-          <input 
-            type="text" 
-            id="industry"
-            name="industry" 
-            placeholder="e.g., Technology, Healthcare"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-          />
-        </div>
-
-        <!-- Password -->
-        <div>
-          <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-            Password <span class="text-red-500">*</span>
-          </label>
-          <input 
-            type="password" 
-            id="password"
-            name="password" 
-            required
-            placeholder="Create a secure password"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-          />
-        </div>
-
-        <!-- Submit Button -->
-        <button 
-          type="submit"
-          class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          Create Company Account
-        </button>
-      </form>
-
-      <!-- Login Link -->
-      <div class="mt-6 text-center">
-        <p class="text-sm text-gray-600">
-          Already have an account?
-          <a href="{% url 'login' %}" class="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-            Login here
-          </a>
-        </p>
-      </div>
-
-    </div>
-
-    <!-- Additional Info -->
-    <div class="mt-6 text-center">
-      <p class="text-xs text-gray-500">
-        By registering, you agree to our 
-        <a href="#" class="text-blue-600 hover:underline">Terms of Service</a> and 
-        <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a>
-      </p>
-    </div>
   </div>
 
 </body>
 </html>
-
-
-

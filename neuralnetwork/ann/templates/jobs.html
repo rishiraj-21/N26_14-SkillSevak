@@ -3,179 +3,317 @@
 {% block title %}Jobs · SkillSevak{% endblock %}
 
 {% block content %}
-  <div class="space-y-8">
-    <!-- Header -->
-    <div class="flex items-center justify-between gap-4">
-      <div>
-        <h1 class="text-3xl font-bold text-slate-800 flex items-center gap-3">
-          <span class="w-8 h-8 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg font-semibold">J</span>
-          Job Openings
-        </h1>
-        <p class="text-slate-500 mt-1">Manage and track all your job postings</p>
+<style>
+  /* ── Stat card: top gradient bar + purple shadow ── */
+  .ss-stat-card {
+    background: #fff;
+    border: 1px solid rgba(124,58,237,0.10);
+    border-radius: 1rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(124,58,237,0.06), 0 1px 3px rgba(124,58,237,0.04);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .ss-stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 3px;
+    background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  }
+  .ss-stat-card:hover {
+    box-shadow: 0 6px 24px rgba(124,58,237,0.12), 0 2px 6px rgba(124,58,237,0.06);
+    transform: translateY(-1px);
+  }
+
+  /* ── Job card ── */
+  .ss-job-card {
+    background: #fff;
+    border: 1px solid rgba(124,58,237,0.08);
+    border-radius: 1rem;
+    box-shadow: 0 2px 10px rgba(124,58,237,0.05), 0 1px 3px rgba(0,0,0,0.04);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .ss-job-card:hover {
+    box-shadow: 0 8px 28px rgba(124,58,237,0.10), 0 2px 6px rgba(0,0,0,0.05);
+    transform: translateY(-2px);
+  }
+
+  /* ── Icon-action button (pause / close) ── */
+  .ss-icon-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(124,58,237,0.12);
+    background: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    font-size: 0.72rem;
+    line-height: 1;
+    padding: 0;
+  }
+  .ss-icon-btn:hover { background: #f5f3ff; border-color: rgba(124,58,237,0.28); }
+
+  /* ── Ghost / outline action ── */
+  .ss-btn-ghost {
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(124,58,237,0.20);
+    border-radius: 10px;
+    background: transparent;
+    color: #374151;
+    font-size: 0.78rem;
+    font-weight: 600;
+    height: 40px;
+    padding: 0 14px;
+    text-decoration: none;
+    transition: background 0.18s, color 0.18s, border-color 0.18s;
+    white-space: nowrap;
+  }
+  .ss-btn-ghost:hover {
+    background: #f5f3ff;
+    color: #7c3aed;
+    border-color: rgba(124,58,237,0.38);
+  }
+
+  /* ── Solid purple action ── */
+  .ss-btn-primary {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #7c3aed;
+    border-radius: 10px;
+    border: none;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    height: 40px;
+    padding: 0 14px;
+    text-decoration: none;
+    transition: background 0.18s, box-shadow 0.18s;
+    white-space: nowrap;
+  }
+  .ss-btn-primary:hover {
+    background: #6d28d9;
+    box-shadow: 0 3px 12px rgba(124,58,237,0.30);
+    color: #fff;
+  }
+
+  /* ── Post New Job header button ── */
+  .ss-btn-post {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #7c3aed;
+    border-radius: 8px;
+    border: none;
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 9px 18px;
+    text-decoration: none;
+    transition: background 0.18s, box-shadow 0.18s, transform 0.15s;
+  }
+  .ss-btn-post:hover {
+    background: #6d28d9;
+    box-shadow: 0 4px 14px rgba(124,58,237,0.35);
+    transform: translateY(-1px);
+    color: #fff;
+  }
+
+  /* ── Stat icon badge ── */
+  .ss-stat-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: #ede9fe;
+    display: flex; align-items: center; justify-content: center;
+    color: #7c3aed;
+    flex-shrink: 0;
+  }
+
+  /* ── Applicant / metric chip ── */
+  .ss-chip-purple {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #f5f3ff;
+    border: 1px solid rgba(124,58,237,0.10);
+    border-radius: 999px;
+    height: 26px;
+    padding: 0 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #7c3aed;
+    white-space: nowrap;
+  }
+  /* Score chips (green/amber/slate) same height */
+  .ss-chip-score {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 999px;
+    height: 26px;
+    padding: 0 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* ── Card divider ── */
+  .ss-divider { height: 1px; background: rgba(124,58,237,0.07); }
+</style>
+
+<div class="space-y-6" style="padding-left: 12px;">
+
+  <!-- ── Page header ── -->
+  <div class="flex items-center justify-between gap-4">
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      <h1 style="font-size:1.75rem; font-weight:700; color:#111827; line-height:1.2; margin:0;">Job Openings</h1>
+      <p style="font-size:0.875rem; color:#6b7280; margin:0; line-height:1.4;">Manage and track all your job postings</p>
+    </div>
+    <a href="{% url 'company_create_job' %}" class="ss-btn-post">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      Post New Job
+    </a>
+  </div>
+
+  <!-- ── Stat cards ── -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+    <!-- Active Jobs -->
+    <div class="ss-stat-card p-5">
+      <div class="flex items-start justify-between">
+        <div>
+          <p style="font-size:0.7rem; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em; font-weight:500; margin-bottom:4px;">Active Jobs</p>
+          <p style="font-size:2rem; font-weight:700; color:#7c3aed; line-height:1.2;">{{ active_jobs }}</p>
+          <p style="font-size:0.72rem; color:#16a34a; font-weight:500; margin-top:6px;">Currently open</p>
+        </div>
+        <div class="ss-stat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        </div>
       </div>
-      <a href="{% url 'company_create_job' %}"
-         class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-indigo-700 hover:to-indigo-800">
-        <span class="mr-2 text-base leading-none">＋</span>
-        Post New Job
+    </div>
+
+    <!-- Total Applications -->
+    <div class="ss-stat-card p-5">
+      <div class="flex items-start justify-between">
+        <div>
+          <p style="font-size:0.7rem; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em; font-weight:500; margin-bottom:4px;">Total Applications</p>
+          <p style="font-size:2rem; font-weight:700; color:#7c3aed; line-height:1.2;">{{ total_applications }}</p>
+          <p style="font-size:0.72rem; color:#16a34a; font-weight:500; margin-top:6px;">Across all jobs</p>
+        </div>
+        <div class="ss-stat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Jobs -->
+    <div class="ss-stat-card p-5">
+      <div class="flex items-start justify-between">
+        <div>
+          <p style="font-size:0.7rem; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em; font-weight:500; margin-bottom:4px;">Total Jobs</p>
+          <p style="font-size:2rem; font-weight:700; color:#7c3aed; line-height:1.2;">{{ jobs|length }}</p>
+          <p style="font-size:0.72rem; color:#6b7280; font-weight:500; margin-top:6px;">Posted in total</p>
+        </div>
+        <div class="ss-stat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Jobs grid ── -->
+  {% if jobs_loading %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {% for _ in "123456" %}
+        <div class="h-64 rounded-2xl animate-pulse" style="background:#f5f3ff; border:1px solid rgba(124,58,237,0.08);"></div>
+      {% endfor %}
+    </div>
+
+  {% elif jobs_data|length == 0 %}
+    <div class="text-center py-20 rounded-2xl" style="background:#fff; border:1px solid rgba(124,58,237,0.08); box-shadow:0 2px 10px rgba(124,58,237,0.05);">
+      <div class="ss-stat-icon mx-auto mb-4" style="width:64px;height:64px;border-radius:1rem;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      </div>
+      <h3 class="text-lg font-semibold mb-2" style="color:#1e1b2e;">No jobs posted yet</h3>
+      <p class="text-sm mb-6" style="color:#9ca3af;">Create your first job posting to start hiring</p>
+      <a href="{% url 'company_create_job' %}" class="ss-btn-post" style="display:inline-flex;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Post Your First Job
       </a>
     </div>
 
-    <!-- Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6 shadow-sm">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-slate-600 mb-1">Active Jobs</p>
-            <p class="text-3xl font-bold text-indigo-600">
-              {{ active_jobs }}
-            </p>
-          </div>
-          <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
-            <span class="text-indigo-600 font-semibold text-lg">J</span>
-          </div>
-        </div>
-      </div>
+  {% else %}
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+      {% for item in jobs_data %}
+        <div class="ss-job-card p-5 flex flex-col">
 
-      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6 shadow-sm">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-slate-600 mb-1">Total Applications</p>
-            <p class="text-3xl font-bold text-emerald-600">
-              {{ total_applications }}
-            </p>
-          </div>
-          <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-            <span class="text-emerald-600 font-semibold text-lg">A</span>
-          </div>
-        </div>
-      </div>
+          <!-- Status + action buttons -->
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+            <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold
+              {% if item.job.status == 'active' or item.job.status == 'open' %}bg-emerald-100 text-emerald-700
+              {% elif item.job.status == 'paused' %}bg-amber-100 text-amber-700
+              {% elif item.job.status == 'closed' %}bg-slate-100 text-slate-600
+              {% else %}bg-[#ede9fe] text-[#7c3aed]{% endif %}"
+              style="height:24px;">
+              {{ item.job.status|default:"open"|capfirst }}
+            </span>
 
-      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl p-6 shadow-sm">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-slate-600 mb-1">Total Jobs</p>
-            <p class="text-3xl font-bold text-slate-700">
-              {{ jobs|length }}
-            </p>
-          </div>
-          <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
-            <span class="text-slate-600 font-semibold text-lg">Σ</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Jobs Grid -->
-    {% if jobs_loading %}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for _ in "123456" %}
-          <div class="h-64 backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl animate-pulse"></div>
-        {% endfor %}
-      </div>
-    {% elif jobs_data|length == 0 %}
-      <div class="backdrop-blur-xl bg-white/60 border border-slate-200/40 rounded-2xl text-center py-20 shadow-sm">
-        <div class="w-16 h-16 rounded-2xl bg-slate-50 text-slate-300 flex items-center justify-center mx-auto mb-4 text-3xl">
-          J
-        </div>
-        <h3 class="text-xl font-semibold text-slate-700 mb-2">No jobs posted yet</h3>
-        <p class="text-slate-500 mb-6">Create your first job posting to start hiring</p>
-        <a href="{% url 'company_create_job' %}"
-           class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
-          <span class="mr-2 text-base leading-none">＋</span>
-          Post Your First Job
-        </a>
-      </div>
-    {% else %}
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {% for item in jobs_data %}
-          <div class="backdrop-blur-xl bg-white/80 border border-slate-200/60 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all group flex flex-col">
-            <!-- Header with Status -->
-            <div class="flex items-start justify-between mb-4">
-              <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold
-                           {% if item.job.status == 'active' or item.job.status == 'open' %}bg-emerald-100 text-emerald-700 border-emerald-200
-                           {% elif item.job.status == 'paused' %}bg-amber-100 text-amber-700 border-amber-200
-                           {% elif item.job.status == 'closed' %}bg-slate-100 text-slate-700 border-slate-200
-                           {% else %}bg-blue-100 text-blue-700 border-blue-200{% endif %}">
-                {{ item.job.status|default:"open" }}
-              </span>
-              <div class="flex gap-1">
-                {% if item.job.status == 'active' or item.job.status == 'open' %}
-                  <form method="post" action="{% url 'job_change_status' item.job.id 'paused' %}">
-                    {% csrf_token %}
-                    <button type="submit"
-                            class="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white/80 text-amber-600 hover:bg-slate-50 text-xs font-semibold">
-                      ||
-                    </button>
-                  </form>
-                {% elif item.job.status == 'paused' %}
-                  <form method="post" action="{% url 'job_change_status' item.job.id 'active' %}">
-                    {% csrf_token %}
-                    <button type="submit"
-                            class="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white/80 text-emerald-600 hover:bg-slate-50 text-xs font-semibold">
-                      ▶
-                    </button>
-                  </form>
-                {% endif %}
-                {% if item.job.status != 'closed' %}
-                  <form method="post" action="{% url 'job_change_status' item.job.id 'closed' %}">
-                    {% csrf_token %}
-                    <button type="submit"
-                            class="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white/80 text-slate-600 hover:bg-slate-50 text-xs font-semibold">
-                      ✕
-                    </button>
-                  </form>
-                {% endif %}
-              </div>
-            </div>
-
-            <!-- Job Title & Info -->
-            <h3 class="text-xl font-bold text-slate-800 mb-2 group-hover:text-indigo-600 transition-colors line-clamp-2">
-              {{ item.job.title }}
-            </h3>
-            <p class="text-sm text-slate-500 mb-3">
-              {{ item.job.location|default:"Remote" }} · {{ item.job.category|default:"General" }}
-            </p>
-
-            <!-- Applicant Stats -->
-            <div class="flex flex-wrap gap-2 mb-4">
-              <div class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 rounded-lg">
-                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-                <span class="text-xs font-semibold text-slate-700">{{ item.applicant_count }}</span>
-              </div>
-              {% if item.applicant_count > 0 %}
-                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg {% if item.top_score >= 70 %}bg-green-100{% elif item.top_score >= 50 %}bg-yellow-100{% else %}bg-slate-100{% endif %}">
-                  <svg class="w-3.5 h-3.5 {% if item.top_score >= 70 %}text-green-600{% elif item.top_score >= 50 %}text-yellow-600{% else %}text-slate-500{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                  <span class="text-xs font-semibold {% if item.top_score >= 70 %}text-green-700{% elif item.top_score >= 50 %}text-yellow-700{% else %}text-slate-600{% endif %}">
-                    Top: {{ item.top_score }}%
-                  </span>
-                </div>
-                <div class="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 rounded-lg">
-                  <span class="text-xs font-medium text-indigo-700">Avg: {{ item.avg_score }}%</span>
-                </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              {% if item.job.status == 'active' or item.job.status == 'open' %}
+                <form method="post" action="{% url 'job_change_status' item.job.id 'paused' %}" style="margin:0;">
+                  {% csrf_token %}
+                  <button type="submit" class="ss-icon-btn" style="color:#d97706;" title="Pause">⏸</button>
+                </form>
+              {% elif item.job.status == 'paused' %}
+                <form method="post" action="{% url 'job_change_status' item.job.id 'active' %}" style="margin:0;">
+                  {% csrf_token %}
+                  <button type="submit" class="ss-icon-btn" style="color:#16a34a;" title="Resume">▶</button>
+                </form>
+              {% endif %}
+              {% if item.job.status != 'closed' %}
+                <form method="post" action="{% url 'job_change_status' item.job.id 'closed' %}" style="margin:0;">
+                  {% csrf_token %}
+                  <button type="submit" class="ss-icon-btn" style="color:#9ca3af;" title="Close">✕</button>
+                </form>
               {% endif %}
             </div>
-
-
-            <!-- Action Buttons -->
-            <div class="flex gap-2 pt-4 border-t border-slate-200 mt-auto">
-              <a href="{% url 'recruiter_job_detail' item.job.id %}"
-                 class="inline-flex items-center justify-center flex-1 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
-                View Applicants
-              </a>
-              <a href="{% url 'recruiter_job_info' item.job.id %}"
-                 class="inline-flex items-center justify-center flex-1 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors">
-                View Details
-              </a>
-            </div>
           </div>
-        {% endfor %}
-      </div>
-    {% endif %}
-  </div>
+
+          <!-- Title & meta -->
+          <h3 class="text-lg font-bold mb-1.5 line-clamp-2" style="color:#1e1b2e;">
+            {{ item.job.title }}
+          </h3>
+          <p class="text-xs mb-4" style="color:#9ca3af;">
+            {{ item.job.location|default:"Remote" }} &middot; {{ item.job.category|default:"General" }}
+          </p>
+
+          <!-- Applicant / score chips -->
+          <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
+            <span class="ss-chip-purple">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              {{ item.applicant_count }} applicant{{ item.applicant_count|pluralize }}
+            </span>
+
+            {% if item.applicant_count > 0 %}
+              <span class="ss-chip-score
+                {% if item.top_score >= 70 %}bg-emerald-100 text-emerald-700
+                {% elif item.top_score >= 50 %}bg-amber-100 text-amber-700
+                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Top: {{ item.top_score }}%
+              </span>
+              <span class="ss-chip-purple">Avg: {{ item.avg_score }}%</span>
+            {% endif %}
+          </div>
+
+          <!-- Action buttons -->
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:auto; padding-top:16px; border-top:1px solid rgba(124,58,237,0.07);">
+            <a href="{% url 'recruiter_job_detail' item.job.id %}" class="ss-btn-ghost" style="flex:1;">
+              View Applicants
+            </a>
+            <a href="{% url 'recruiter_job_info' item.job.id %}" class="ss-btn-primary" style="flex:1;">
+              View Details
+            </a>
+          </div>
+
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+</div>
 {% endblock %}
-
-

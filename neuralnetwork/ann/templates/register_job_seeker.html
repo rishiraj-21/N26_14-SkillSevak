@@ -2,41 +2,198 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Register – Job Seeker</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register – Job Seeker · SkillSevak</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: 'Inter', system-ui, sans-serif; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg,
+        #7c3aed 0%, #9333ea 20%, #a855f7 45%,
+        #c084fc 68%, #ddb6fa 82%, #ede9fe 95%, #f3f0ff 100%);
+      overflow: hidden;
+      position: relative;
+      padding: 24px 16px;
+    }
+
+    .bg-card {
+      position: absolute;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.20);
+      border-radius: 14px;
+      backdrop-filter: blur(2px);
+    }
+    .bg-inner {
+      position: absolute;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 8px;
+    }
+    .bg-line {
+      position: absolute;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.20);
+    }
+    .bg-dot-grid {
+      position: absolute;
+      display: grid;
+      grid-template-columns: repeat(3, 8px);
+      gap: 5px;
+    }
+    .bg-dot { width: 7px; height: 7px; border-radius: 3px; background: rgba(255,255,255,0.22); }
+
+    .login-card {
+      position: relative;
+      z-index: 10;
+      background: white;
+      border-radius: 22px;
+      padding: 38px 44px 36px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 24px 80px rgba(100,30,180,0.28), 0 4px 20px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .inp {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      color: #374151;
+      outline: none;
+      transition: border-color 0.18s, box-shadow 0.18s;
+      margin-bottom: 10px;
+    }
+    .inp::placeholder { color: #9ca3af; }
+    .inp:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.10);
+    }
+
+    .btn-signin {
+      width: 100%;
+      padding: 13px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: white;
+      background: linear-gradient(135deg, #a855f7 0%, #9333ea 50%, #7c3aed 100%);
+      box-shadow: 0 4px 18px rgba(168,85,247,0.38), inset 0 1px 0 rgba(255,255,255,0.22);
+      transition: transform 0.15s, box-shadow 0.18s;
+      letter-spacing: 0.01em;
+    }
+    .btn-signin:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 26px rgba(168,85,247,0.46), inset 0 1px 0 rgba(255,255,255,0.22);
+    }
+    .btn-signin:active { transform: translateY(0); }
+  </style>
 </head>
-<body class="min-h-screen bg-slate-50 flex items-center justify-center">
-  <div class="w-full max-w-md bg-white/80 backdrop-blur-xl border border-slate-200/40 rounded-2xl shadow-sm p-8">
-    <h1 class="text-2xl font-bold text-slate-800 mb-6">Create Job Seeker Account</h1>
-    <form method="post" class="space-y-4">
-      {% csrf_token %}
-      <div>
-        <label class="block text-xs font-medium text-slate-600 mb-1">Full Name</label>
-        <input name="name" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" required />
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-slate-600 mb-1">Email</label>
-        <input type="email" name="email" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" required />
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-slate-600 mb-1">Phone</label>
-        <input name="phone" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" />
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-slate-600 mb-1">Password</label>
-        <input type="password" name="password" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" required />
-      </div>
-      <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 rounded-xl">
-        Sign Up
-      </button>
-    </form>
-    <p class="mt-4 text-xs text-slate-500">
-      Already have an account?
-      <a href="{% url 'login' %}" class="text-indigo-600 font-medium">Log in</a>
-    </p>
+<body>
+
+  <!-- Left ghost card -->
+  <div class="bg-card" style="left:3%;top:12%;width:218px;height:298px;">
+    <div class="bg-dot-grid" style="top:14px;left:14px;">
+      <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+      <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+      <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+    </div>
+    <div class="bg-line" style="top:68px;left:14px;width:88px;"></div>
+    <div class="bg-line" style="top:82px;left:14px;width:56px;background:rgba(255,255,255,0.12);"></div>
+    <div class="bg-inner" style="top:104px;left:14px;right:14px;height:50px;">
+      <div style="position:absolute;left:10px;top:10px;width:26px;height:26px;border-radius:999px;background:rgba(255,255,255,0.26);"></div>
+      <div class="bg-line" style="top:14px;left:46px;width:58px;background:rgba(255,255,255,0.22);"></div>
+      <div class="bg-line" style="top:26px;left:46px;width:38px;background:rgba(255,255,255,0.13);"></div>
+    </div>
+    <div class="bg-inner" style="top:164px;left:14px;right:14px;height:50px;">
+      <div style="position:absolute;left:10px;top:10px;width:26px;height:26px;border-radius:999px;background:rgba(255,255,255,0.20);"></div>
+      <div class="bg-line" style="top:14px;left:46px;width:52px;background:rgba(255,255,255,0.18);"></div>
+      <div class="bg-line" style="top:26px;left:46px;width:34px;background:rgba(255,255,255,0.10);"></div>
+    </div>
+    <div class="bg-inner" style="top:224px;left:14px;right:14px;height:50px;">
+      <div style="position:absolute;left:10px;top:10px;width:26px;height:26px;border-radius:999px;background:rgba(255,255,255,0.16);"></div>
+      <div class="bg-line" style="top:14px;left:46px;width:62px;background:rgba(255,255,255,0.16);"></div>
+      <div class="bg-line" style="top:26px;left:46px;width:40px;background:rgba(255,255,255,0.10);"></div>
+    </div>
   </div>
+
+  <div class="bg-dot-grid" style="position:absolute;left:7%;top:14%;">
+    <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+    <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+    <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+  </div>
+
+  <div style="position:absolute;left:9%;bottom:14%;width:52px;height:52px;border-radius:999px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;">
+    <div style="width:26px;height:26px;border-radius:999px;border:2px solid rgba(255,255,255,0.40);display:flex;align-items:center;justify-content:center;">
+      <div style="width:10px;height:10px;border-radius:999px;background:rgba(255,255,255,0.50);"></div>
+    </div>
+  </div>
+
+  <!-- Right ghost card -->
+  <div class="bg-card" style="right:2%;top:8%;width:228px;height:318px;">
+    <div class="bg-line" style="top:16px;left:14px;width:100px;"></div>
+    <div class="bg-line" style="top:30px;left:14px;width:58px;background:rgba(255,255,255,0.11);"></div>
+    <div class="bg-inner" style="top:56px;left:14px;right:14px;height:38px;"></div>
+    <div class="bg-inner" style="top:103px;left:14px;right:14px;height:38px;"></div>
+    <div class="bg-inner" style="top:150px;left:14px;right:14px;height:38px;"></div>
+    <div class="bg-inner" style="top:197px;left:14px;right:14px;height:38px;"></div>
+    <div style="position:absolute;bottom:14px;right:14px;width:14px;height:14px;border-radius:999px;background:rgba(255,255,255,0.26);"></div>
+  </div>
+
+  <div class="bg-card" style="right:4%;bottom:12%;width:190px;height:118px;">
+    <div class="bg-line" style="top:16px;left:14px;width:78px;"></div>
+    <div class="bg-line" style="top:30px;left:14px;width:48px;background:rgba(255,255,255,0.11);"></div>
+    <div style="position:absolute;bottom:14px;left:14px;right:14px;height:36px;background:rgba(255,255,255,0.12);border-radius:7px;"></div>
+  </div>
+
+  <div class="bg-dot-grid" style="position:absolute;right:8%;top:18%;">
+    <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+    <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+    <div class="bg-dot"></div><div class="bg-dot"></div><div class="bg-dot"></div>
+  </div>
+
+  <!-- ── Register Card ── -->
+  <div class="login-card">
+
+    <p style="font-size:0.88rem;font-weight:700;color:#1a1730;margin-bottom:6px;text-align:center;">SkillSevak</p>
+    <h1 style="font-size:1.55rem;font-weight:800;color:#1a1730;text-align:center;margin-bottom:6px;letter-spacing:-0.02em;">Join as Job Seeker</h1>
+    <p style="font-size:0.82rem;color:#9ca3af;text-align:center;margin-bottom:22px;">Create your account and start finding jobs</p>
+
+    <form method="post" style="width:100%;">
+      {% csrf_token %}
+
+      <input class="inp" type="text"     name="name"     placeholder="Full Name"      required />
+      <input class="inp" type="email"    name="email"    placeholder="Email"          required />
+      <input class="inp" type="tel"      name="phone"    placeholder="Phone (optional)" />
+      <input class="inp" type="password" name="password" placeholder="Password"       required style="margin-bottom:18px;" />
+
+      <button type="submit" class="btn-signin">Create Account</button>
+    </form>
+
+    <p style="margin-top:18px;font-size:0.8rem;color:#6b7280;text-align:center;">
+      Already have an account?
+      <a href="{% url 'login' %}" style="color:#7c3aed;font-weight:600;text-decoration:none;">Log in</a>
+    </p>
+
+    <a href="{% url 'index' %}"
+       style="margin-top:14px;font-size:0.78rem;color:#9ca3af;text-decoration:none;display:flex;align-items:center;gap:4px;transition:color 0.15s;"
+       onmouseover="this.style.color='#6b7280'" onmouseout="this.style.color='#9ca3af'">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+      Back to home
+    </a>
+  </div>
+
 </body>
 </html>
-
-

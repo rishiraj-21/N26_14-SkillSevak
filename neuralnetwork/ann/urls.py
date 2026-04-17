@@ -32,11 +32,8 @@ urlpatterns = [
     path('recruiter/templates/', views.recruiter_email_templates, name='email_templates'),
 
     # Company side (job giver)
-    path('company/jobs/', views.company_jobs, name='company_jobs'),
-    path('company/jobs/<int:job_id>/edit/', views.company_edit_job, name='job_edit'),
     path('company/jobs/<int:job_id>/status/<str:status>/', views.job_change_status, name='job_change_status'),
     path('company/jobs/new/', views.company_create_job, name='company_create_job'),
-    path('company/jobs/<int:job_id>/applicants/', views.company_job_applicants, name='company_job_applicants'),
     path('company/applications/<int:application_id>/status/', 
          views.company_update_application_status, 
          name='company_update_application_status'),
@@ -52,6 +49,7 @@ urlpatterns = [
     
     # API endpoints
     path('api/upload-resume/', views.upload_resume, name='upload_resume'),
+    path('api/refresh-matches/', views.refresh_matches, name='refresh_matches'),
     path('api/apply-job/<int:job_id>/', views.apply_job, name='apply_job'),
 
     # Phase 2: Resume Parsing API

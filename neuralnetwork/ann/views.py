@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -52,8 +53,8 @@ def login_view(request):
                 if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
                     return redirect(next_url)
                 elif hasattr(user, 'companyprofile'):
-                    # User is a company - redirect to company jobs page
-                    return redirect('company_jobs')
+                    # User is a company - redirect to recruiter jobs page
+                    return redirect('jobs')
                 elif hasattr(user, 'candidateprofile'):
                     # User is a candidate - redirect to candidate dashboard
                     return redirect('candidate')
@@ -194,8 +195,10 @@ def candidate_page(request):
     elif filter_type == 'salary':
         jobs_list.sort(key=lambda x: x.salary_max or 0, reverse=True)
 
-    # Limit to top 10
-    jobs_list = jobs_list[:10]
+    # Paginate: 8 jobs per page
+    paginator = Paginator(jobs_list, 8)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
 
     # Calculate stats
     applications_count = 0
@@ -208,7 +211,7 @@ def candidate_page(request):
             candidate=request.user,
             status='interview'
         ).count()
-        # Count jobs with 70%+ match
+        # Count jobs with 70%+ match (across all pages)
         high_matches_count = len([j for j in jobs_list if j.match_score >= 70])
 
     # Extra context for sidebar
@@ -229,7 +232,8 @@ def candidate_page(request):
     context = {
         'user': request.user if request.user.is_authenticated else None,
         'profile': profile,
-        'jobs': jobs_list,
+        'jobs': page_obj,
+        'page_obj': page_obj,
         'applications_count': applications_count,
         'interviews_count': interviews_count,
         'high_matches_count': high_matches_count,
@@ -370,14 +374,14 @@ def recruiter_pipeline(request):
     engine = MatchingEngine()
 
     STAGE_DEFS = [
-        {'id': 'applied',         'label': 'Applied',        'hdr_bg': 'bg-slate-100',   'hdr_border': 'border-slate-300',   'badge_bg': 'bg-slate-200',   'badge_text': 'text-slate-700'},
-        {'id': 'screening',       'label': 'Screening',      'hdr_bg': 'bg-blue-50',     'hdr_border': 'border-blue-300',    'badge_bg': 'bg-blue-200',    'badge_text': 'text-blue-800'},
-        {'id': 'phone_interview', 'label': 'Phone Interview', 'hdr_bg': 'bg-purple-50',  'hdr_border': 'border-purple-300',  'badge_bg': 'bg-purple-200',  'badge_text': 'text-purple-800'},
-        {'id': 'technical',       'label': 'Technical',      'hdr_bg': 'bg-indigo-50',   'hdr_border': 'border-indigo-300',  'badge_bg': 'bg-indigo-200',  'badge_text': 'text-indigo-800'},
-        {'id': 'final_interview', 'label': 'Final Round',    'hdr_bg': 'bg-amber-50',    'hdr_border': 'border-amber-300',   'badge_bg': 'bg-amber-200',   'badge_text': 'text-amber-800'},
-        {'id': 'offer',           'label': 'Offer',          'hdr_bg': 'bg-emerald-50',  'hdr_border': 'border-emerald-300', 'badge_bg': 'bg-emerald-200', 'badge_text': 'text-emerald-800'},
-        {'id': 'hired',           'label': 'Hired',          'hdr_bg': 'bg-green-50',    'hdr_border': 'border-green-300',   'badge_bg': 'bg-green-200',   'badge_text': 'text-green-800'},
-        {'id': 'rejected',        'label': 'Rejected',       'hdr_bg': 'bg-rose-50',     'hdr_border': 'border-rose-300',    'badge_bg': 'bg-rose-200',    'badge_text': 'text-rose-800'},
+        {'id': 'applied',         'label': 'Applied',        'hdr_bg': 'bg-blue-50',     'hdr_border': 'border-blue-200',    'hdr_text': 'text-blue-700',    'badge_bg': 'bg-blue-100',    'badge_text': 'text-blue-700'},
+        {'id': 'screening',       'label': 'Screening',      'hdr_bg': 'bg-emerald-50',  'hdr_border': 'border-emerald-200', 'hdr_text': 'text-emerald-700', 'badge_bg': 'bg-emerald-100', 'badge_text': 'text-emerald-700'},
+        {'id': 'phone_interview', 'label': 'Phone Interview', 'hdr_bg': 'bg-amber-50',   'hdr_border': 'border-amber-200',   'hdr_text': 'text-amber-700',   'badge_bg': 'bg-amber-100',   'badge_text': 'text-amber-700'},
+        {'id': 'technical',       'label': 'Technical',      'hdr_bg': 'bg-rose-50',     'hdr_border': 'border-rose-200',    'hdr_text': 'text-rose-700',    'badge_bg': 'bg-rose-100',    'badge_text': 'text-rose-700'},
+        {'id': 'final_interview', 'label': 'Final Round',    'hdr_bg': 'bg-purple-50',   'hdr_border': 'border-purple-200',  'hdr_text': 'text-purple-700',  'badge_bg': 'bg-purple-100',  'badge_text': 'text-purple-700'},
+        {'id': 'offer',           'label': 'Offer',          'hdr_bg': 'bg-indigo-50',   'hdr_border': 'border-indigo-200',  'hdr_text': 'text-indigo-700',  'badge_bg': 'bg-indigo-100',  'badge_text': 'text-indigo-700'},
+        {'id': 'hired',           'label': 'Hired',          'hdr_bg': 'bg-green-50',    'hdr_border': 'border-green-200',   'hdr_text': 'text-green-700',   'badge_bg': 'bg-green-100',   'badge_text': 'text-green-700'},
+        {'id': 'rejected',        'label': 'Rejected',       'hdr_bg': 'bg-slate-50',    'hdr_border': 'border-slate-200',   'hdr_text': 'text-slate-600',   'badge_bg': 'bg-slate-100',   'badge_text': 'text-slate-600'},
     ]
 
     stages = []
@@ -480,10 +484,27 @@ def recruiter_schedule(request):
         status='scheduled',
     )
 
+    # Data for the 2-step "Schedule Interview" modal
+    jobs = list(Job.objects.filter(company_profile=company).values('id', 'title').order_by('title'))
+    raw_apps = Application.objects.filter(
+        job__company_profile=company
+    ).select_related('candidate', 'job', 'candidate__candidateprofile').order_by('job__title')
+    apps_data = []
+    for app in raw_apps:
+        profile = getattr(app.candidate, 'candidateprofile', None)
+        cname = (
+            (profile.full_name if profile and profile.full_name else None)
+            or app.candidate.get_full_name()
+            or app.candidate.username
+        )
+        apps_data.append({'id': app.id, 'job_id': app.job_id, 'name': cname})
+
     return render(request, 'schedule.html', {
         'selected_date':       selected_date,
         'day_interviews':      day_interviews,
         'upcoming_interviews': upcoming_interviews,
+        'jobs_json':           json.dumps(jobs),
+        'apps_json':           json.dumps(apps_data),
     })
 
 
@@ -781,107 +802,6 @@ def recommended_jobs(request):
 
 # ===== Company side: posting and managing jobs =====
 
-@login_required
-def company_jobs(request):
-    if not hasattr(request.user, 'companyprofile'):
-        messages.error(request, 'Only companies can access this page.')
-        return redirect('index')
-
-    jobs = Job.objects.filter(company_profile=request.user.companyprofile).prefetch_related('application_set')
-
-    # Add applicant data with match scores for each job
-    from ann.services.matching_engine import MatchingEngine
-    engine = MatchingEngine()
-
-    jobs_with_data = []
-    for job in jobs:
-        apps = job.application_set.all().select_related('candidate')
-        applicant_count = apps.count()
-
-        # Calculate match scores for applicants
-        match_scores = []
-        top_applicants = []
-        for app in apps[:5]:  # Top 5 applicants
-            try:
-                profile = CandidateProfile.objects.get(user=app.candidate)
-                match_data = engine.calculate_match(profile, job)
-                score = match_data.get('overall_score', 0)
-                match_scores.append(score)
-
-                # Get top skills
-                top_skills = []
-                if hasattr(profile, 'skills') and profile.skills:
-                    skills_list = [s.strip() for s in profile.skills.split(',') if s.strip()]
-                    top_skills = skills_list[:3]
-
-                top_applicants.append({
-                    'name': app.candidate.first_name or app.candidate.username,
-                    'score': score,
-                    'top_skills': top_skills,
-                })
-            except CandidateProfile.DoesNotExist:
-                pass
-
-        avg_score = sum(match_scores) / len(match_scores) if match_scores else 0
-        top_score = max(match_scores) if match_scores else 0
-
-        jobs_with_data.append({
-            'job': job,
-            'applicant_count': applicant_count,
-            'avg_score': round(avg_score, 1),
-            'top_score': round(top_score, 1),
-            'top_applicants': top_applicants,
-        })
-
-    return render(request, 'company_jobs.html', {'jobs_data': jobs_with_data})
-
-
-@login_required
-@require_http_methods(["GET", "POST"])
-def company_edit_job(request, job_id):
-    """
-    Edit an existing job posting
-    """
-    if not hasattr(request.user, 'companyprofile'):
-        messages.error(request, 'Only companies can edit jobs.')
-        return redirect('index')
-    
-    job = get_object_or_404(Job, id=job_id, company_profile=request.user.companyprofile)
-    
-    if request.method == 'POST':
-        job.title = request.POST.get('title', job.title)
-        job.location = request.POST.get('location', job.location)
-        job.salary_min = request.POST.get('salary_min', job.salary_min) or 0
-        job.salary_max = request.POST.get('salary_max', job.salary_max) or 0
-        job.job_type = request.POST.get('job_type', job.job_type)
-        job.category = request.POST.get('category', job.category) or ''
-        job.description = request.POST.get('description', job.description)
-        job.requirements = request.POST.get('requirements', job.requirements)
-        job.benefits = request.POST.get('benefits', job.benefits) or ''
-        job.skills_required = request.POST.get('skills_required', job.skills_required) or ''
-        # Add experience fields
-        job.experience_min = request.POST.get('experience_min') or job.experience_min or 0
-        job.experience_max = request.POST.get('experience_max') or job.experience_max or 99
-        job.save()
-
-        # Phase 3: Re-extract skills after job update
-        skills_count = extract_job_skills(job)
-
-        # Phase 4: Regenerate embedding after job update
-        generate_job_embedding(job)
-
-        logger.info(f"Updated job '{job.title}' with {skills_count} extracted skills and embedding")
-
-        messages.success(request, 'Job updated successfully.')
-        return redirect('jobs')
-    
-    context = {
-        'job': job,
-        'editing': True
-    }
-    return render(request, 'company_create_job.html', context)
-
-
 def company_create_job(request):
     if not hasattr(request.user, 'companyprofile'):
         messages.error(request, 'Only companies can post jobs.')
@@ -920,74 +840,6 @@ def company_create_job(request):
     return render(request, 'company_create_job.html', {'editing': False})
 
 
-@login_required
-def company_job_applicants(request, job_id):
-    """
-    Show all applicants for a job with AI match scores.
-
-    Recruiters see:
-    - Match percentage for each candidate
-    - Top matched skills
-    - Missing skills
-    - Candidates ranked by match score
-    """
-    if not hasattr(request.user, 'companyprofile'):
-        messages.error(request, 'Only companies can access this page.')
-        return redirect('index')
-
-    job = get_object_or_404(Job, id=job_id, company_profile=request.user.companyprofile)
-    apps = Application.objects.filter(job=job).select_related('candidate')
-
-    # Get status choices from the model
-    status_choices = Application._meta.get_field('status').choices
-
-    # Always compute live match scores
-    from ann.services.matching_engine import MatchingEngine
-    engine = MatchingEngine()
-
-    candidate_ids = [app.candidate_id for app in apps]
-    profile_map = {
-        cp.user_id: cp
-        for cp in CandidateProfile.objects.filter(user_id__in=candidate_ids)
-    }
-
-    applications_with_scores = []
-    for app in apps:
-        candidate_profile = profile_map.get(app.candidate_id)
-        app.candidate_profile = candidate_profile
-        app.match_score = 0
-        app.match_data = None
-        app.matched_skills = []
-        app.missing_skills = []
-        app.top_skills = []
-        app.breakdown = {}
-
-        if candidate_profile:
-            try:
-                match_data = engine.calculate_match(candidate_profile, job)
-                app.match_score = round(match_data.get('overall_score', 0), 1)
-                app.matched_skills = match_data.get('matched_skills', [])[:5]
-                app.missing_skills = match_data.get('missing_skills', [])[:3]
-                app.breakdown = match_data.get('breakdown', {})
-                app.match_data = match_data
-            except Exception as e:
-                logger.error(f"Match compute error for applicant {app.id}: {e}")
-
-            app.top_skills = list(CandidateSkill.objects.filter(
-                candidate=candidate_profile
-            ).order_by('-confidence_score')[:5].values_list('skill_text', flat=True))
-
-        applications_with_scores.append(app)
-
-    # Sort by match score (highest first)
-    applications_with_scores.sort(key=lambda x: x.match_score, reverse=True)
-
-    return render(request, 'company_job_applicants.html', {
-        'job': job,
-        'applications': applications_with_scores,
-        'status_choices': status_choices
-    })
-
 
 @login_required
 @require_http_methods(["POST"])
@@ -1006,7 +858,7 @@ def company_update_application_status(request, application_id):
     else:
         messages.error(request, 'Invalid status.')
 
-    return redirect('company_job_applicants', job_id=app.job.id)
+    return redirect('recruiter_job_detail', job_id=app.job.id)
 
 
 def job_detail(request, job_id):
@@ -1586,6 +1438,61 @@ def _upload_resume_sync(request, profile):
             'skills_extracted': skills_extracted,
         }
     })
+
+
+@require_http_methods(["POST"])
+def refresh_matches(request):
+    """
+    Re-run match scoring for all open jobs against the current CV.
+    Called automatically after CV upload and available as a manual refresh.
+    Does NOT retrain the model — only re-runs inference using existing weights.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+
+    try:
+        profile = CandidateProfile.objects.get(user=request.user)
+    except CandidateProfile.DoesNotExist:
+        return JsonResponse({'error': 'No candidate profile found'}, status=404)
+
+    if not profile.resume_file:
+        return JsonResponse({'error': 'No resume uploaded yet'}, status=400)
+
+    has_parsed = ParsedResume.objects.filter(
+        candidate=profile, parsing_status='completed'
+    ).exists()
+    if not has_parsed:
+        return JsonResponse({'error': 'Resume not yet parsed'}, status=400)
+
+    try:
+        from ann.services.matching_engine import MatchingEngine
+
+        engine = MatchingEngine()
+        open_jobs = list(Job.objects.filter(status='open'))
+
+        # Clear stale scores so old CV data never bleeds through
+        MatchScore.objects.filter(candidate=profile).delete()
+
+        refreshed = 0
+        for job in open_jobs:
+            match_data = engine.calculate_match(profile, job)
+            _save_match_score(profile, job, match_data)
+            refreshed += 1
+
+        logger.info(
+            f"Match refresh for {request.user.username}: "
+            f"{refreshed} jobs rescored after CV update"
+        )
+
+        return JsonResponse({
+            'success': True,
+            'jobs_rescored': refreshed,
+            'message': f'Recommendations updated based on your latest CV ({refreshed} jobs rescored)',
+        })
+
+    except Exception as e:
+        logger.error(f"Match refresh failed for {request.user.username}: {e}")
+        return JsonResponse({'error': f'Refresh failed: {str(e)}'}, status=500)
 
 
 @require_http_methods(["POST"])
