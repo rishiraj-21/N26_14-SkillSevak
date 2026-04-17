@@ -28,7 +28,6 @@ urlpatterns = [
          views.pipeline_update_status,
          name='pipeline_update_status'),
     path('recruiter/schedule/', views.recruiter_schedule, name='schedule'),
-    path('recruiter/analytics/', views.recruiter_analytics, name='analytics'),
     path('recruiter/templates/', views.recruiter_email_templates, name='email_templates'),
 
     # Company side (job giver)

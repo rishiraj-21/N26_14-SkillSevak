@@ -66,6 +66,18 @@ tailwind.config = {
   .animate-fade-up { animation: fadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   .animate-scale-in { animation: scaleIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
+  /* rotating hero word — clip-path keeps it in flow so "Understand" never moves */
+  @keyframes wordIn {
+    from { clip-path: inset(100% 0 -8px 0); transform: translateY(-55%); }
+    to   { clip-path: inset(0%   0 -8px 0); transform: translateY(0); }
+  }
+  @keyframes wordOut {
+    from { clip-path: inset(0%   0 -8px 0); transform: translateY(0); }
+    to   { clip-path: inset(0    0 100%  0); transform: translateY(55%); }
+  }
+  .word-in  { animation: wordIn  0.44s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .word-out { animation: wordOut 0.30s ease-in forwards; }
+
   .delay-100 { animation-delay: 0.1s; }
   .delay-200 { animation-delay: 0.2s; }
   .delay-300 { animation-delay: 0.3s; }
@@ -326,7 +338,7 @@ tailwind.config = {
 <section class="pt-[128px] pb-8 relative overflow-hidden glow-bg">
   <div class="max-w-7xl mx-auto px-6 lg:px-8 text-center relative z-10">
     <h1 class="text-[44px] sm:text-[56px] lg:text-[72px] font-semibold leading-[1.08] text-slate-900 tracking-[-0.035em] animate-fade-up" style="opacity:0">
-      Understand Talent<br>
+      <span style="display:inline-block;transform:translateX(-12px)">Understand</span> <span id="rotating-word" style="display:inline-block;will-change:transform,clip-path" class="font-semibold">Talent</span><br>
       Beyond <span class="text-violet-600">Keywords</span>
     </h1>
 
@@ -903,6 +915,25 @@ const observer = new IntersectionObserver((entries) => {
 document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale, .reveal-blur').forEach(el => {
   observer.observe(el);
 });
+
+// Rotating hero word
+(function () {
+  const words = ['Talent', 'Assets', 'Merits'];
+  let idx = 0;
+  const el = document.getElementById('rotating-word');
+  if (!el) return;
+  el.classList.add('word-in');
+  setInterval(() => {
+    el.classList.remove('word-in');
+    el.classList.add('word-out');
+    setTimeout(() => {
+      idx = (idx + 1) % words.length;
+      el.textContent = words[idx];
+      el.classList.remove('word-out');
+      el.classList.add('word-in');
+    }, 320);
+  }, 2600);
+})();
 
 // Navbar shadow on scroll
 window.addEventListener('scroll', () => {

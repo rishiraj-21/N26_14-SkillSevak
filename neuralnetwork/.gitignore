@@ -77,3 +77,4 @@ coverage.xml
 # pytest
 .pytest_cache/
 *.md
+!README.md
